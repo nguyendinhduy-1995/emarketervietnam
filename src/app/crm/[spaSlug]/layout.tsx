@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 const crmNav = [
     { icon: '📊', label: 'Dashboard', path: '' },
+    { icon: '📈', label: 'Báo cáo', path: '/analytics' },
     { icon: '👥', label: 'Khách hàng', path: '/customers' },
     { icon: '💆', label: 'Dịch vụ', path: '/services' },
     { icon: '📅', label: 'Lịch hẹn', path: '/appointments' },
