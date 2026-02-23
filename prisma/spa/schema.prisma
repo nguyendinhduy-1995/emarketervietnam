@@ -42,6 +42,7 @@ model Service {
 
   appointments Appointment[]
   receiptItems ReceiptItem[]
+  commissionRules CommissionRule[]
 
   @@index([workspaceId, createdAt])
   @@index([workspaceId, isActive])
@@ -81,6 +82,7 @@ model Receipt {
 
   customer Customer      @relation(fields: [customerId], references: [id])
   items    ReceiptItem[]
+  commissionTransactions CommissionTransaction[]
 
   @@index([workspaceId, createdAt])
   @@index([customerId])
@@ -146,3 +148,77 @@ model StockTransaction {
   @@index([workspaceId, createdAt])
   @@index([productId])
 }
+
+// ─── Payroll & Commissions ────────────────────────────────
+model Staff {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  phone       String?
+  role        String   @default("STAFF") // STAFF | MANAGER
+  baseSalary  Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  commissionRules CommissionRule[]
+  transactions    CommissionTransaction[]
+  payslips        Payslip[]
+
+  @@index([workspaceId, createdAt])
+}
+
+model CommissionRule {
+  id          String   @id @default(cuid())
+  workspaceId String
+  staffId     String?  // If null, applies to all staff
+  serviceId   String?  // If null, applies to all services
+  type        String   @default("PERCENTAGE") // PERCENTAGE | FIXED
+  value       Int      @default(0) // e.g. 10 (%) or 50000 (VND)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  staff   Staff?   @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  service Service? @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, serviceId])
+  @@index([workspaceId, staffId])
+}
+
+model CommissionTransaction {
+  id          String   @id @default(cuid())
+  workspaceId String
+  staffId     String
+  receiptId   String?  // Link to the receipt that generated this commission
+  amount      Int      @default(0)
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  staff   Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  receipt Receipt? @relation(fields: [receiptId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@index([staffId])
+}
+
+model Payslip {
+  id              String   @id @default(cuid())
+  workspaceId     String
+  staffId         String
+  month           Int
+  year            Int
+  baseSalary      Int      @default(0)
+  totalCommission Int      @default(0)
+  totalAllowance  Int      @default(0)
+  totalDeduction  Int      @default(0)
+  netPay          Int      @default(0)
+  status          String   @default("DRAFT") // DRAFT | PAID
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, staffId, month, year])
+  @@index([workspaceId, status])
+}
+
