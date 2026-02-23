@@ -1,0 +1,285 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../node_modules/.prisma/platform"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Auth / RBAC ───────────────────────────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  phone        String?
+  status       String   @default("ACTIVE") // ACTIVE | DISABLED
+  isAdmin      Boolean  @default(false)     // platform super-admin
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  ownedOrgs   Org[]
+  memberships Membership[]
+  auditLogs   AuditLog[]
+}
+
+model Org {
+  id          String   @id @default(cuid())
+  name        String
+  ownerUserId String
+  createdAt   DateTime @default(now())
+
+  owner      User        @relation(fields: [ownerUserId], references: [id])
+  workspaces Workspace[]
+}
+
+model Workspace {
+  id        String   @id @default(cuid())
+  orgId     String
+  name      String
+  slug      String   @unique
+  product   String   @default("SPA") // product type
+  status    String   @default("ACTIVE") // ACTIVE | SUSPENDED
+  createdAt DateTime @default(now())
+
+  org              Org               @relation(fields: [orgId], references: [id])
+  memberships      Membership[]
+  auditLogs        AuditLog[]
+  productInstances ProductInstance[]
+  provisioningJobs ProvisioningJob[]
+  entitlements     Entitlement[]
+  subscriptions    Subscription[]
+  upgradeOrders    UpgradeOrder[]
+  paymentTxns      PaymentTxn[]
+  reminderRules    ReminderRule[]
+  reminderLogs     ReminderLog[]
+  aiProviderKeys   AiProviderKey[]
+
+  @@index([orgId])
+}
+
+model Membership {
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        String   @default("STAFF") // OWNER | ADMIN | STAFF
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@unique([workspaceId, userId])
+  @@index([workspaceId])
+  @@index([userId])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  workspaceId String
+  actorUserId String
+  action      String
+  payloadJson Json?
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  actor     User      @relation(fields: [actorUserId], references: [id])
+
+  @@index([workspaceId, createdAt])
+}
+
+// ─── Provisioning ──────────────────────────────────────────
+
+model ProductInstance {
+  id          String   @id @default(cuid())
+  workspaceId String
+  productKey  String   @default("SPA_CRM")
+  baseUrl     String
+  status      String   @default("PENDING") // PENDING | ACTIVE | FAILED
+  lastError   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId])
+}
+
+model ProvisioningJob {
+  id          String   @id @default(cuid())
+  workspaceId String
+  type        String   // SEED_SPA
+  status      String   @default("PENDING") // PENDING | RUNNING | DONE | FAILED
+  attempts    Int      @default(0)
+  lastError   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId])
+  @@index([status])
+}
+
+// ─── Marketplace / Entitlements ────────────────────────────
+
+model Module {
+  id           String   @id @default(cuid())
+  key          String   @unique
+  name         String
+  description  String?
+  priceMonthly Int      @default(0) // in VND
+  icon         String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Entitlement {
+  id          String    @id @default(cuid())
+  workspaceId String
+  moduleKey   String
+  status      String    @default("ACTIVE") // ACTIVE | INACTIVE
+  activeFrom  DateTime  @default(now())
+  activeTo    DateTime?
+  createdAt   DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId, moduleKey])
+  @@index([workspaceId, createdAt])
+}
+
+model Plan {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  name      String
+  limitsJson Json?
+  createdAt DateTime @default(now())
+}
+
+model Subscription {
+  id                 String    @id @default(cuid())
+  workspaceId        String
+  planKey            String
+  status             String    @default("TRIAL") // TRIAL | ACTIVE | PAST_DUE | SUSPENDED
+  currentPeriodStart DateTime  @default(now())
+  currentPeriodEnd   DateTime?
+  graceUntil         DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  workspace    Workspace     @relation(fields: [workspaceId], references: [id])
+  reminderLogs ReminderLog[]
+
+  @@index([workspaceId])
+  @@index([status, currentPeriodEnd])
+}
+
+// ─── Billing ───────────────────────────────────────────────
+
+model UpgradeOrder {
+  id          String    @id @default(cuid())
+  workspaceId String
+  orderCode   String    @unique
+  itemsJson   Json
+  amount      Int       // VND
+  status      String    @default("PENDING") // PENDING | PAID | EXPIRED | NEED_REVIEW
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId, createdAt])
+  @@index([orderCode])
+  @@index([status])
+}
+
+model PaymentTxn {
+  id          String   @id @default(cuid())
+  workspaceId String
+  provider    String
+  txnRef      String   @unique
+  amount      Int
+  description String?
+  paidAt      DateTime
+  rawJson     Json?    // minimal, no sensitive data
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId, createdAt])
+  @@index([txnRef])
+}
+
+// ─── Dunning / Reminders ──────────────────────────────────
+
+model ReminderRule {
+  id           String   @id @default(cuid())
+  workspaceId  String
+  type         String   @default("RENEWAL")
+  offsetsJson  Json     // [-7, -3, -1, 1, 3]
+  channelsJson Json     // ["EMAIL", "SMS"]
+  createdAt    DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId])
+}
+
+model ReminderLog {
+  id             String   @id @default(cuid())
+  workspaceId    String
+  subscriptionId String
+  offsetDay      Int
+  channel        String   // EMAIL | SMS | ZALO
+  status         String   @default("PENDING") // PENDING | SENT | FAILED
+  sentAt         DateTime?
+  metaJson       Json?
+  createdAt      DateTime @default(now())
+
+  workspace    Workspace    @relation(fields: [workspaceId], references: [id])
+  subscription Subscription @relation(fields: [subscriptionId], references: [id])
+
+  @@index([workspaceId, createdAt])
+  @@index([subscriptionId])
+}
+
+// ─── AI Vault ─────────────────────────────────────────────
+
+model AiProviderKey {
+  id             String   @id @default(cuid())
+  workspaceId    String
+  provider       String   // OPENAI | GOOGLE | ANTHROPIC
+  keyCiphertext  String   // AES-256-GCM encrypted
+  keyIv          String   // Initialization vector
+  keyAuthTag     String   // Auth tag
+  keyLast4       String
+  status         String   @default("ACTIVE") // ACTIVE | REVOKED
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@unique([workspaceId, provider])
+  @@index([workspaceId])
+}
+
+// ─── Help Center ──────────────────────────────────────────
+
+model HelpDoc {
+  id         String   @id @default(cuid())
+  productKey String   @default("SPA_CRM")
+  moduleKey  String?
+  title      String
+  slug       String   @unique
+  contentMd  String
+  sortOrder  Int      @default(0)
+  version    Int      @default(1)
+  updatedAt  DateTime @updatedAt
+  createdAt  DateTime @default(now())
+
+  @@index([productKey, moduleKey])
+}

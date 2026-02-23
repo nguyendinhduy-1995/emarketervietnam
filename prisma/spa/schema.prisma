@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../node_modules/.prisma/spa"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("SPA_DATABASE_URL")
+}
+
+// ─── Spa CRM Business Tables ──────────────────────────────
+// All tables MUST have workspaceId + index on (workspaceId, createdAt)
+
+model Customer {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  phone       String?
+  email       String?
+  tagsJson    Json?    // ["VIP", "new"]
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  appointments Appointment[]
+  receipts     Receipt[]
+
+  @@index([workspaceId, createdAt])
+  @@index([workspaceId, phone])
+}
+
+model Service {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  durationMin Int      @default(60)
+  price       Int      @default(0) // VND
+  category    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  appointments Appointment[]
+  receiptItems ReceiptItem[]
+
+  @@index([workspaceId, createdAt])
+  @@index([workspaceId, isActive])
+}
+
+model Appointment {
+  id          String    @id @default(cuid())
+  workspaceId String
+  customerId  String
+  serviceId   String
+  startAt     DateTime
+  endAt       DateTime
+  status      String    @default("SCHEDULED") // SCHEDULED | CONFIRMED | IN_PROGRESS | COMPLETED | CANCELLED | NO_SHOW
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  customer Customer @relation(fields: [customerId], references: [id])
+  service  Service  @relation(fields: [serviceId], references: [id])
+
+  @@index([workspaceId, createdAt])
+  @@index([workspaceId, startAt])
+  @@index([customerId])
+  @@index([serviceId])
+}
+
+model Receipt {
+  id          String   @id @default(cuid())
+  workspaceId String
+  customerId  String
+  total       Int      @default(0)
+  paid        Int      @default(0)
+  remaining   Int      @default(0)
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  customer Customer      @relation(fields: [customerId], references: [id])
+  items    ReceiptItem[]
+
+  @@index([workspaceId, createdAt])
+  @@index([customerId])
+}
+
+model ReceiptItem {
+  id        String @id @default(cuid())
+  receiptId String
+  serviceId String
+  qty       Int    @default(1)
+  price     Int    @default(0)
+
+  receipt Receipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [serviceId], references: [id])
+
+  @@index([receiptId])
+}

@@ -1,36 +1,128 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# eMarketer Hub SaaS v1
 
-## Getting Started
+Nền tảng SaaS multi-tenant quản lý Spa & Salon. Khách hàng tự đăng ký và hệ thống tự provision CRM instance.
 
-First, run the development server:
+## Tech Stack
+
+- **Next.js 16** (App Router) – UI + API routes
+- **Prisma** – ORM (2 schemas: platform + spa)
+- **PostgreSQL** – Database
+- **Redis + BullMQ** – Job queue (provisioning, dunning)
+- **JWT (jose)** – Authentication
+- **AES-256-GCM** – AI key encryption
+
+## Quick Start
 
 ```bash
+# 1. Install dependencies
+npm install
+
+# 2. Copy env
+cp .env.example .env
+# Edit .env with your database credentials
+
+# 3. Setup database + seed
+npm run setup
+# This runs: prisma:generate → prisma:push → prisma:seed
+
+# 4. Start dev server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# 5. Start workers (separate terminal)
+npm run worker
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Architecture
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+Hub (emarketervietnam.vn)
+├── Public Site: /, /products, /pricing, /signup, /login
+├── Customer Portal: /dashboard, /workspaces, /apps, /marketplace, /billing, /users, /ai-vault, /help
+├── Admin Panel: /admin/*
+└── Spa CRM: /crm/{spaSlug}/*
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+**Single app, 4 areas** via route groups. Multi-tenant via `workspaceId` on all queries.
 
-## Learn More
+## Database
 
-To learn more about Next.js, take a look at the following resources:
+| Schema | Tables | Purpose |
+|--------|--------|---------|
+| platform | User, Org, Workspace, Membership, Subscription, Module, Entitlement, UpgradeOrder, PaymentTxn, AiProviderKey, etc. | Hub management |
+| spa | Customer, Service, Appointment, Receipt, ReceiptItem | CRM business data |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## API Endpoints
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Auth
+- `POST /api/auth/signup` – Create user + workspace + CRM
+- `POST /api/auth/login` – Login with rate limiting
+- `GET /api/auth/me` – Current session
+- `DELETE /api/auth/me` – Logout
 
-## Deploy on Vercel
+### Platform
+- `GET /api/workspaces` – List workspaces
+- `GET /api/apps` – List CRM instances
+- `GET /api/modules` – Marketplace modules
+- `GET /api/subscription` – Current subscription
+- `POST /api/orders` – Create upgrade order
+- `GET /api/orders/:id` – Order details + QR
+- `POST /api/ai-keys` – Save encrypted AI key
+- `POST /api/ai-keys/test` – Test AI connection
+- `GET/POST /api/users` – Members & invites
+- `GET /api/help` – Help docs
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Webhook
+- `POST /api/webhooks/{provider}` – Bank payment webhook (idempotent)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Admin
+- `GET /api/admin/tenants` – Search tenants
+- `POST /api/admin/tenants` – Actions (suspend/unsuspend/extend/reset)
+- `POST /api/admin/orders/:id/confirm` – Manual order confirmation
+- `POST /api/admin/provisioning/:workspaceId/retry` – Retry provisioning
+- `GET/POST /api/admin/modules` – CRUD modules
+
+### CRM (tenant-scoped)
+- `CRUD /api/crm/{spaSlug}/customers`
+- `CRUD /api/crm/{spaSlug}/services`
+- `CRUD /api/crm/{spaSlug}/appointments`
+- `CRUD /api/crm/{spaSlug}/receipts`
+- `GET /api/crm/{spaSlug}/modules`
+- `GET /api/crm/{spaSlug}/help`
+
+## Flows
+
+### Signup → CRM
+1. `/signup` form → `POST /api/auth/signup`
+2. Creates: User → Org → Workspace(slug) → Membership(OWNER) → Subscription(FREE) → ProductInstance(PENDING)
+3. Enqueue `SEED_SPA` BullMQ job
+4. Worker seeds spa_db with sample services
+5. Set ProductInstance.status=ACTIVE
+6. Redirect to `/crm/{slug}/onboarding`
+
+### Billing → Module Activation
+1. Marketplace → Create order → `POST /api/orders`
+2. Order page shows QR + transfer content: `EMK-XXXXXX`
+3. Bank webhook → `POST /api/webhooks/bank`
+4. Match: amount + orderCode + idempotent txnRef
+5. Auto: order=PAID → create entitlements → re-activate if PAST_DUE
+
+### Dunning
+- Daily worker scans expiring subscriptions
+- T-7, T-3, T-1: Email reminders
+- T+1: PAST_DUE (disable paid modules)
+- T+3: SUSPENDED (read-only)
+- On payment: re-activate immediately
+
+## Default Admin
+
+- Email: `admin@emarketervietnam.vn`
+- Password: `admin123`
+- ⚠️ Change in production!
+
+## Assumptions
+
+1. Path-based routing (`/crm/{slug}`) instead of subdomain for v1
+2. Single Postgres instance, two schemas
+3. Email v1: console log in dev, SMTP in production
+4. QR generates bank transfer info (not VietQR API)
+5. Webhook expects `{ txnRef, amount, description, paidAt }`
