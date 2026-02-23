@@ -19,6 +19,8 @@ model Customer {
   email       String?
   tagsJson    Json?    // ["VIP", "new"]
   notes       String?
+  points      Int      @default(0)
+  tier        String   @default("MEMBER")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -75,6 +77,8 @@ model Receipt {
   workspaceId String
   customerId  String
   total       Int      @default(0)
+  discount    Int      @default(0)
+  voucherCode String?
   paid        Int      @default(0)
   remaining   Int      @default(0)
   notes       String?
@@ -221,5 +225,25 @@ model Payslip {
 
   @@unique([workspaceId, staffId, month, year])
   @@index([workspaceId, status])
+}
+
+model Voucher {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  code          String
+  type          String   @default("PERCENT") // PERCENT | FIXED
+  value         Int      @default(0)
+  minOrderValue Int      @default(0)
+  maxDiscount   Int      @default(0)
+  limit         Int      @default(100)
+  used          Int      @default(0)
+  isActive      Boolean  @default(true)
+  expiresAt     DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([workspaceId, code])
+  @@index([workspaceId, isActive])
+  @@index([workspaceId, expiresAt])
 }
 

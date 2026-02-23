@@ -11,6 +11,7 @@ const crmNav = [
     { icon: '🧾', label: 'Phiếu thu', path: '/receipts' },
     { icon: '🧑‍💼', label: 'Nhân viên', path: '/staff' },
     { icon: '💰', label: 'Lương & HH', path: '/payroll' },
+    { icon: '🎁', label: 'Khuyến mãi', path: '/marketing' },
     { icon: '🤖', label: 'Trợ lý AI', path: '/ai-suite' },
     { icon: '📦', label: 'Modules', path: '/modules' },
     { icon: '🎯', label: 'Onboarding', path: '/onboarding' },
