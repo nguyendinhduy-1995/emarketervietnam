@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: hub_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASS:-postgres123}
+      # The init script inside the app container will create the schemas/DBs, 
+      # or we just rely on Prisma pushing to the default 'postgres' DB with different schemas.
+      # For simplicity we'll just use the default postgres DB.
+    ports:
+      - "5432:5432"
+    volumes:
+      - hub_db_data:/var/lib/postgresql/data
+    networks:
+      - hub_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: hub_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - hub_redis_data:/data
+    networks:
+      - hub_network
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hub_web
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASS:-postgres123}@db:5432/postgres?schema=public
+      - SPA_DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASS:-postgres123}@db:5432/postgres?schema=spa
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL:-https://emarketervietnam.vn}
+      - NEXT_PUBLIC_CRM_PATH=${NEXT_PUBLIC_CRM_PATH:-/crm}
+      - PORT=3000
+    depends_on:
+      - db
+      - redis
+    networks:
+      - hub_network
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hub_worker
+    restart: always
+    command: ["node", "dist/workers/index.js"]
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASS:-postgres123}@db:5432/postgres?schema=public
+      - SPA_DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASS:-postgres123}@db:5432/postgres?schema=spa
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL:-https://emarketervietnam.vn}
+      - NEXT_PUBLIC_CRM_PATH=${NEXT_PUBLIC_CRM_PATH:-/crm}
+    depends_on:
+      - db
+      - redis
+    networks:
+      - hub_network
+
+networks:
+  hub_network:
+    driver: bridge
+
+volumes:
+  hub_db_data:
+  hub_redis_data:

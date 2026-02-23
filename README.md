@@ -32,6 +32,23 @@ npm run dev
 npm run worker
 ```
 
+## Docker Deployment (Production)
+
+The application is fully containerized and ready for VPS deployment using Docker Compose.
+
+```bash
+# 1. Clone the repository to your server
+# 2. Copy and configure secrets
+cp .env.example .env
+# Edit .env: Set JWT_SECRET, ENCRYPTION_KEY, and SMTP settings. DB passwords can be set as DB_USER and DB_PASS.
+
+# 3. Start the stack (Web, Worker, Postgres, Redis)
+docker-compose up -d --build
+
+# 4. Verify containers are running
+docker-compose ps
+```
+
 ## Architecture
 
 ```
