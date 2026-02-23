@@ -86,7 +86,10 @@ export async function POST(req: NextRequest) {
             });
 
             // 6. Create ProductInstance (PENDING)
-            const baseUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/crm/${slug}`;
+            const isProd = process.env.NODE_ENV === 'production';
+            const protocol = isProd ? 'https://' : 'http://';
+            const baseHost = isProd ? 'crmspa.emarketervietnam.vn' : 'crmspa.localhost:3000';
+            const baseUrl = `${protocol}${baseHost}/${slug}`;
             await tx.productInstance.create({
                 data: {
                     workspaceId: workspace.id,
@@ -133,7 +136,9 @@ export async function POST(req: NextRequest) {
                 slug: result.workspace.slug,
                 name: result.workspace.name,
             },
-            crmUrl: `/crm/${result.workspace.slug}`,
+            crmUrl: process.env.NODE_ENV === 'production'
+                ? `https://crmspa.emarketervietnam.vn/${result.workspace.slug}`
+                : `http://crmspa.localhost:3000/${result.workspace.slug}`,
         });
     } catch (error) {
         if (error instanceof z.ZodError) {

@@ -56,3 +56,7 @@ The application uses Next.js Route Groups to manage different access domains wit
 - **Advanced Modules:** Expand marketplace with Inventory Management, Payroll/Commissions, SMS Integration, and AI Assistants.
 - **Patient/Client Portal:** Allow spa customers to book appointments online directly.
 - **Mobile App:** React Native based mobile application for spa staff.
+
+### V2.4 Assumptions & Notes (Implemented by Dev)
+- **Subdomain Routing:** We use Next.js `middleware.ts` to intercept `crmspa.emarketervietnam.vn` and `crmspa.localhost` hostnames, seamlessly rewriting `/{slug}/...` to `/crm/{slug}/...`. This implements the PRD spec without duplicating the app or needing complex DNS wildcard changes beyond a single A record for `crmspa`.
+- **Dunning Worker:** Implemented as a BullMQ repeatable job (`cron: 0 0 * * *`) that checks `Subscription` records daily.

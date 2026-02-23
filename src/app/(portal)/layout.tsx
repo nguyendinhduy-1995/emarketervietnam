@@ -92,7 +92,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
                 {ws?.instance?.status === 'ACTIVE' && (
                     <div style={{ padding: '16px 24px', marginTop: '16px' }}>
                         <Link
-                            href={`/crm/${ws.slug}`}
+                            href={process.env.NODE_ENV === 'production' ? `https://crmspa.emarketervietnam.vn/${ws.slug}` : `http://crmspa.localhost:3000/${ws.slug}`}
                             className="btn btn-primary"
                             style={{ width: '100%', fontSize: '13px' }}
                         >

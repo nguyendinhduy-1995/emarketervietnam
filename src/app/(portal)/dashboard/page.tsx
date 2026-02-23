@@ -117,9 +117,9 @@ export default function DashboardPage() {
                         <p style={{ color: 'var(--text-secondary)', marginBottom: '16px', fontSize: '14px' }}>
                             Truy cập CRM để quản lý khách hàng, lịch hẹn và doanh thu
                         </p>
-                        <Link href={`/crm/${data.workspace.slug}`} className="btn btn-primary">
+                        <a href={process.env.NODE_ENV === 'production' ? `https://crmspa.emarketervietnam.vn/${data.workspace.slug}` : `http://crmspa.localhost:3000/${data.workspace.slug}`} className="btn btn-primary">
                             🚀 Truy cập CRM →
-                        </Link>
+                        </a>
                     </div>
                 )}
 

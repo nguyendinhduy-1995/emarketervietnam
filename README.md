@@ -143,3 +143,7 @@ Hub (emarketervietnam.vn)
 3. Email v1: console log in dev, SMTP in production
 4. QR generates bank transfer info (not VietQR API)
 5. Webhook expects `{ txnRef, amount, description, paidAt }`
+
+### Subdomain Routing Strategy
+- The application uses Next.js Middleware to handle `crmspa.emarketervietnam.vn`.
+- Ensure DNS is formatted properly: point an A or CNAME record for `crmspa` to your server.

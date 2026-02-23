@@ -30,7 +30,7 @@ export default function WorkspacesPage() {
                             Role: <span className="badge badge-info">{ws.role}</span>
                         </p>
                         <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
-                            Link CRM: <a href={`/crm/${ws.slug}`} style={{ color: 'var(--accent-secondary)' }}>/crm/{ws.slug}</a>
+                            Link CRM: <a href={process.env.NODE_ENV === 'production' ? `https://crmspa.emarketervietnam.vn/${ws.slug}` : `http://crmspa.localhost:3000/${ws.slug}`} style={{ color: 'var(--accent-secondary)' }}>Mở CRM ({ws.slug})</a>
                         </p>
                     </div>
                 ))}
