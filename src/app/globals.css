@@ -548,6 +548,28 @@ tr:hover {
     font-size: 22px;
   }
 
+  /* Enhance touch targets for one-handed mobile usage */
+  .btn {
+    padding: 14px 20px;
+    font-size: 15px;
+  }
+
+  .btn-sm {
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+
+  .form-input {
+    padding: 14px 16px;
+    font-size: 16px;
+    /* Prevents iOS auto-zoom */
+  }
+
+  td,
+  th {
+    padding: 16px 16px;
+  }
+
   /* Mobile Bottom Navigation */
   .bottom-nav {
     display: flex;
