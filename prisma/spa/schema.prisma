@@ -98,3 +98,51 @@ model ReceiptItem {
 
   @@index([receiptId])
 }
+
+model ProductCategory {
+  id          String    @id @default(cuid())
+  workspaceId String
+  name        String
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  products Product[]
+
+  @@index([workspaceId, createdAt])
+}
+
+model Product {
+  id            String    @id @default(cuid())
+  workspaceId   String
+  categoryId    String?
+  name          String
+  sku           String?
+  price         Int       @default(0) // Selling price
+  costPrice     Int       @default(0) // Purchase cost
+  stockQuantity Int       @default(0)
+  reorderLevel  Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  category     ProductCategory?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  transactions StockTransaction[]
+
+  @@index([workspaceId, createdAt])
+  @@index([categoryId])
+}
+
+model StockTransaction {
+  id          String   @id @default(cuid())
+  workspaceId String
+  productId   String
+  type        String   // IN | OUT | ADJUSTMENT
+  quantity    Int      // Positive for IN, Negative for OUT
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt])
+  @@index([productId])
+}
