@@ -26,6 +26,7 @@ model Customer {
 
   appointments Appointment[]
   receipts     Receipt[]
+  customerPackages CustomerPackage[]
 
   @@index([workspaceId, createdAt])
   @@index([workspaceId, phone])
@@ -45,6 +46,7 @@ model Service {
   appointments Appointment[]
   receiptItems ReceiptItem[]
   commissionRules CommissionRule[]
+  servicePackages ServicePackage[]
 
   @@index([workspaceId, createdAt])
   @@index([workspaceId, isActive])
@@ -245,5 +247,42 @@ model Voucher {
   @@unique([workspaceId, code])
   @@index([workspaceId, isActive])
   @@index([workspaceId, expiresAt])
+}
+
+model ServicePackage {
+  id           String   @id @default(cuid())
+  workspaceId  String
+  name         String
+  price        Int      @default(0)
+  validityDays Int?     // Number of days valid after purchase
+  totalSessions Int     @default(1)
+  serviceId    String?  // Which service does this package provide?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  customerPackages CustomerPackage[]
+  service          Service?          @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, isActive])
+}
+
+model CustomerPackage {
+  id              String   @id @default(cuid())
+  workspaceId     String
+  customerId      String
+  packageId       String
+  totalSessions   Int
+  usedSessions    Int      @default(0)
+  status          String   @default("ACTIVE") // ACTIVE | EXHAUSTED | EXPIRED
+  expiresAt       DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  customer Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  package  ServicePackage @relation(fields: [packageId], references: [id], onDelete: Restrict)
+
+  @@index([workspaceId, customerId])
+  @@index([workspaceId, status])
 }
 

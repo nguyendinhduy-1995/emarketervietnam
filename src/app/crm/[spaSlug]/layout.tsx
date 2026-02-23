@@ -8,6 +8,7 @@ const crmNav = [
     { icon: '📈', label: 'Báo cáo', path: '/analytics' },
     { icon: '👥', label: 'Khách hàng', path: '/customers' },
     { icon: '💆', label: 'Dịch vụ', path: '/services' },
+    { icon: '🎫', label: 'Thẻ liệu trình', path: '/packages' },
     { icon: '📅', label: 'Lịch hẹn', path: '/appointments' },
     { icon: '🧾', label: 'Phiếu thu', path: '/receipts' },
     { icon: '🧑‍💼', label: 'Nhân viên', path: '/staff' },

@@ -54,7 +54,11 @@ export default function CrmCustomersPage() {
                     <tbody>
                         {customers.map(c => (
                             <tr key={c.id}>
-                                <td style={{ fontWeight: 500 }}>{c.name}</td>
+                                <td style={{ fontWeight: 500 }}>
+                                    <a href={`/crm/${spaSlug}/customers/${c.id}`} style={{ color: 'var(--accent-primary)', textDecoration: 'none' }}>
+                                        {c.name}
+                                    </a>
+                                </td>
                                 <td>{c.phone || '—'}</td>
                                 <td style={{ color: 'var(--text-muted)' }}>{c.email || '—'}</td>
                                 <td style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{new Date(c.createdAt).toLocaleDateString('vi-VN')}</td>
