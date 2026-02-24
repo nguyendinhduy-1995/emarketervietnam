@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { platformDb as db } from '@/lib/db/platform';
 import { getAnySession } from '@/lib/auth/jwt';
-import { sendEmail, orderConfirmationEmail } from '@/lib/email/service';
+
 import crypto from 'crypto';
 
 // Hub Checkout: Product → Coupon → Order → Wallet Debit → Entitlement → Receipt → Notify
@@ -226,117 +226,10 @@ export async function POST(req: NextRequest) {
         return order;
     });
 
-    // Send order confirmation email (fire-and-forget)
-    try {
-        const user = await db.user.findUnique({ where: { id: userId }, select: { name: true, email: true } });
-        if (user?.email) {
-            const emailData = orderConfirmationEmail({
-                customerName: user.name || 'Khách hàng',
-                productName: product.name,
-                amount: chargeAmount,
-                orderId: result.id,
-                paymentMethod: 'Ví eMarketer',
-            });
-            sendEmail({ to: user.email, ...emailData }).catch(console.error);
-        }
-    } catch { /* non-critical */ }
-
-    // ─── Webhook to SMK: sync entitlements after purchase ─────────
-    if (product.key.startsWith('SMK_') && workspace) {
-        try {
-            // Get all active SMK entitlements for this workspace
-            const activeEntitlements = await db.entitlement.findMany({
-                where: { workspaceId: workspace.id, status: 'ACTIVE', moduleKey: { startsWith: 'SMK_' } },
-                select: { moduleKey: true },
-            });
-            // Map SMK_ADV_SHIPPING → ADV_SHIPPING (strip prefix)
-            const featureKeys = activeEntitlements
-                .map(e => e.moduleKey.replace('SMK_', ''))
-                .filter(k => k.startsWith('ADV_'));
-
-            const smkUrl = process.env.SMK_URL || 'http://localhost:3001';
-            fetch(`${smkUrl}/api/entitlements`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-webhook-secret': process.env.WEBHOOK_SECRET || 'dev-secret',
-                },
-                body: JSON.stringify({ action: 'UPDATE_ENTITLEMENTS', features: featureKeys }),
-            }).catch(err => console.error('[Checkout] SMK webhook failed:', err));
-        } catch (err) {
-            console.error('[Checkout] SMK entitlement sync error:', err);
-        }
-    }
-
-    // ─── Auto-Provision or Convert Trial → Paid ────────────────────
-    let provisionedWorkspace: { id: string; slug: string } | null = null;
-    if (product.deliveryMethod === 'PROVISION_TENANT') {
-        try {
-            // Check if user has an existing trial workspace for this product
-            const existingTrial = await db.emkAccount.findFirst({
-                where: {
-                    workspace: { org: { ownerUserId: userId } },
-                    plan: 'TRIAL',
-                    status: 'ACTIVE',
-                },
-                include: { workspace: true },
-            });
-
-            if (existingTrial) {
-                // ── Convert Trial → Paid: clear 14-day timer ──
-                await db.$transaction(async (tx) => {
-                    await tx.emkAccount.update({
-                        where: { id: existingTrial.id },
-                        data: { plan: 'STARTER', trialEndAt: null },
-                    });
-                    await tx.subscription.updateMany({
-                        where: { workspaceId: existingTrial.workspaceId, status: 'TRIAL' },
-                        data: {
-                            status: 'ACTIVE',
-                            trialEndsAt: null,
-                            currentPeriodEnd: new Date(Date.now() + 30 * 86400000),
-                        },
-                    });
-                    await tx.eventLog.create({
-                        data: {
-                            actorUserId: userId,
-                            type: 'TRIAL_CONVERTED_TO_PAID',
-                            workspaceId: existingTrial.workspaceId,
-                            payloadJson: { orderId: result.id, plan: 'STARTER' },
-                        },
-                    });
-                });
-                provisionedWorkspace = { id: existingTrial.workspaceId, slug: existingTrial.workspace.slug };
-                console.log(`[Checkout] Converted trial → paid: ${existingTrial.workspace.slug}`);
-            } else {
-                // ── New provision (thuê ngay, không qua trial) ──
-                const slug = `smk-${userId.slice(-6)}-${Date.now().toString(36)}`;
-                const prov = await db.$transaction(async (tx) => {
-                    const org = await tx.org.create({
-                        data: { name: `CRM — ${product.name}`, ownerUserId: userId, status: 'ACTIVE' },
-                    });
-                    const ws = await tx.workspace.create({
-                        data: { orgId: org.id, name: product.name, slug, product: 'OPTICAL', status: 'ACTIVE' },
-                    });
-                    await tx.membership.create({ data: { workspaceId: ws.id, userId, role: 'ADMIN' } });
-                    await tx.emkAccount.create({
-                        data: { workspaceId: ws.id, plan: 'STARTER', status: 'ACTIVE', trialEndAt: null },
-                    });
-                    return ws;
-                });
-                provisionedWorkspace = { id: prov.id, slug: prov.slug };
-                console.log(`[Checkout] Provisioned CRM tenant: ${prov.slug}`);
-            }
-        } catch (err) {
-            console.error('[Checkout] CRM provision/convert error:', err);
-        }
-    }
-
 
     return NextResponse.json({
         ok: true, order: result, message: `Mua "${product.name}" thành công!`,
         productType: product.type, deliveryMethod: product.deliveryMethod,
         charged: chargeAmount, discount: discountAmount,
-        ...(provisionedWorkspace ? { redirectUrl: `/smk-crm`, provision: provisionedWorkspace } : {}),
     }, { status: 201 });
 }

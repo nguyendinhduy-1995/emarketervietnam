@@ -4,7 +4,7 @@ import { platformDb } from '@/lib/db/platform';
 import { hashPassword } from '@/lib/auth/password';
 import { signToken, setSessionCookie } from '@/lib/auth/jwt';
 import { generateUniqueSlug } from '@/lib/slug';
-import { enqueueProvisioningJob } from '@/lib/queue/provisioning';
+
 
 const signupSchema = z.object({
     workspaceName: z.string().min(2).max(100),
@@ -128,8 +128,6 @@ export async function POST(req: NextRequest) {
             return { user, workspace };
         });
 
-        // Enqueue provisioning job (outside transaction)
-        await enqueueProvisioningJob(result.workspace.id);
 
         // Generate JWT
         const token = await signToken({

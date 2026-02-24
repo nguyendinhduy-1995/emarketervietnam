@@ -23,9 +23,13 @@ export default function HubDashboard() {
 
     useEffect(() => {
         fetch('/api/hub/today')
-            .then(r => { if (!r.ok) throw new Error('Unauthorized'); return r.json(); })
+            .then(r => { if (!r.ok) throw new Error('Not available'); return r.json(); })
             .then(d => { setData(d); setLoading(false); })
-            .catch(() => { window.location.href = '/login'; });
+            .catch(() => {
+                // Fallback: show dashboard without today data
+                setData({ alerts: [], kpi: { label: '', current: 0, target: 0, percent: 0 }, workspaces: [], hasCompletedOnboarding: false });
+                setLoading(false);
+            });
 
         // Fetch CMS articles
         fetch('/api/hub/cms')
