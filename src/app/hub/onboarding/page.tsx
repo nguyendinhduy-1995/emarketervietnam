@@ -66,12 +66,24 @@ export default function OnboardingPage() {
             }
 
             toastSuccess('Đã tạo không gian làm việc! 🎉');
-            setTimeout(() => { window.location.href = '/hub'; }, 800);
+            // Show product recommendations instead of immediate redirect
+            setStep(3);
         } catch {
             setError('Không thể kết nối server');
             toastError('Lỗi kết nối');
             setLoading(false);
         }
+    };
+
+    // Product recommendations based on industry
+    const getRecommendations = () => {
+        const recs: { icon: string; name: string; desc: string; slug: string }[] = [];
+        if (['SPA', 'SALON', 'CLINIC'].includes(industry)) {
+            recs.push({ icon: '💆', name: 'CRM Spa Pro', desc: 'Quản lý khách, đặt lịch, loyalty tự động', slug: 'crm-spa-pro' });
+        }
+        recs.push({ icon: '🤖', name: 'AI Content Creator', desc: 'Tạo nội dung marketing bằng AI, nhanh x10', slug: 'app-ai-content' });
+        recs.push({ icon: '📚', name: 'Tài liệu Marketing A-Z', desc: 'Học thực chiến, template sẵn dùng', slug: 'digital-marketing-guide' });
+        return recs;
     };
 
     return (
@@ -290,6 +302,56 @@ export default function OnboardingPage() {
                     </div>
                 </div>
             )}
+
+            {/* Step 3: Product Recommendations */}
+            {step === 3 && (
+                <div style={{
+                    display: 'flex', flexDirection: 'column', gap: '16px',
+                    animation: 'obSlideIn 300ms ease', ['--slide-from' as string]: '24px',
+                }}>
+                    <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '48px', marginBottom: '8px' }}>🎉</div>
+                        <h2 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 4px' }}>Workspace đã sẵn sàng!</h2>
+                        <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                            Khám phá sản phẩm phù hợp cho {industries.find(i => i.key === industry)?.label}
+                        </p>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {getRecommendations().map(rec => (
+                            <a key={rec.slug} href={`/hub/marketplace/${rec.slug}`} className="ob-card" style={{
+                                display: 'flex', alignItems: 'center', gap: '12px',
+                                padding: '16px', borderRadius: '16px', textDecoration: 'none',
+                                background: 'var(--bg-card)', border: '1px solid var(--border)',
+                                color: 'var(--text-primary)', boxShadow: 'var(--shadow-sm)',
+                            }}>
+                                <span style={{ fontSize: '32px' }}>{rec.icon}</span>
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ fontWeight: 700, fontSize: '14px' }}>{rec.name}</div>
+                                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{rec.desc}</div>
+                                </div>
+                                <span style={{ color: 'var(--accent-primary)', fontWeight: 700 }}>→</span>
+                            </a>
+                        ))}
+                    </div>
+
+                    <button onClick={() => { window.location.href = '/hub'; }} style={{
+                        padding: '14px', borderRadius: '14px', fontWeight: 700, fontSize: '15px',
+                        background: 'var(--accent-gradient)', color: 'white', border: 'none',
+                        cursor: 'pointer', fontFamily: 'inherit', boxShadow: 'var(--shadow-glow)',
+                    }}>
+                        Vào Hub →
+                    </button>
+
+                    <button onClick={() => { window.location.href = '/hub/marketplace'; }} style={{
+                        background: 'none', border: 'none', color: 'var(--text-muted)',
+                        fontSize: '12px', cursor: 'pointer', fontFamily: 'inherit', padding: '4px',
+                    }}>
+                        Xem tất cả sản phẩm →
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
+

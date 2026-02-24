@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { platformDb as db } from '@/lib/db/platform';
 import { getAnySession } from '@/lib/auth/jwt';
+import { sendEmail, orderConfirmationEmail } from '@/lib/email/service';
 import crypto from 'crypto';
 
 // Hub Checkout: Product → Coupon → Order → Wallet Debit → Entitlement → Receipt → Notify
@@ -224,6 +225,21 @@ export async function POST(req: NextRequest) {
 
         return order;
     });
+
+    // Send order confirmation email (fire-and-forget)
+    try {
+        const user = await db.user.findUnique({ where: { id: userId }, select: { name: true, email: true } });
+        if (user?.email) {
+            const emailData = orderConfirmationEmail({
+                customerName: user.name || 'Khách hàng',
+                productName: product.name,
+                amount: chargeAmount,
+                orderId: result.id,
+                paymentMethod: 'Ví eMarketer',
+            });
+            sendEmail({ to: user.email, ...emailData }).catch(console.error);
+        }
+    } catch { /* non-critical */ }
 
     return NextResponse.json({
         ok: true, order: result, message: `Mua "${product.name}" thành công!`,
