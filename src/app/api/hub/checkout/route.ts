@@ -241,6 +241,33 @@ export async function POST(req: NextRequest) {
         }
     } catch { /* non-critical */ }
 
+    // ─── Webhook to SMK: sync entitlements after purchase ─────────
+    if (product.key.startsWith('SMK_') && workspace) {
+        try {
+            // Get all active SMK entitlements for this workspace
+            const activeEntitlements = await db.entitlement.findMany({
+                where: { workspaceId: workspace.id, status: 'ACTIVE', moduleKey: { startsWith: 'SMK_' } },
+                select: { moduleKey: true },
+            });
+            // Map SMK_ADV_SHIPPING → ADV_SHIPPING (strip prefix)
+            const featureKeys = activeEntitlements
+                .map(e => e.moduleKey.replace('SMK_', ''))
+                .filter(k => k.startsWith('ADV_'));
+
+            const smkUrl = process.env.SMK_URL || 'http://localhost:3001';
+            fetch(`${smkUrl}/api/entitlements`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-webhook-secret': process.env.WEBHOOK_SECRET || 'dev-secret',
+                },
+                body: JSON.stringify({ action: 'UPDATE_ENTITLEMENTS', features: featureKeys }),
+            }).catch(err => console.error('[Checkout] SMK webhook failed:', err));
+        } catch (err) {
+            console.error('[Checkout] SMK entitlement sync error:', err);
+        }
+    }
+
     return NextResponse.json({
         ok: true, order: result, message: `Mua "${product.name}" thành công!`,
         productType: product.type, deliveryMethod: product.deliveryMethod,

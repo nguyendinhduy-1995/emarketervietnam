@@ -11,11 +11,14 @@ interface ProductInfo {
 
 const INDUSTRY_LABELS: Record<string, string> = {
     SPA: 'Spa & Salon', SALES: 'Bán hàng', PERSONAL: 'Cá nhân',
+    OPTICAL: 'Mắt kính', RETAIL: 'Bán lẻ', SALON: 'Salon',
 };
 
 const INDUSTRY_FILTERS = [
     { key: 'ALL', label: 'Tất cả' },
     { key: 'SPA', label: 'Spa & Salon' },
+    { key: 'OPTICAL', label: '👓 Mắt kính' },
+    { key: 'RETAIL', label: 'Bán lẻ' },
     { key: 'SALES', label: 'Bán hàng' },
     { key: 'PERSONAL', label: 'Cá nhân' },
 ];

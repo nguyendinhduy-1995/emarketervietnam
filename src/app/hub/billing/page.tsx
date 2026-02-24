@@ -27,10 +27,14 @@ export default function BillingPage() {
     useEffect(() => {
         Promise.all([
             fetch('/api/hub/subscription').then(r => r.json()),
-            fetch('/api/orders').then(r => r.json()),
+            fetch('/api/hub/orders').then(r => r.json()),
         ]).then(([subData, ordersData]) => {
             setSub(subData);
-            setInvoices(ordersData.orders || []);
+            // Map CommerceOrder → InvoiceInfo
+            const mapped = (ordersData.orders || []).map((o: { id: string; totalAmount: number; status: string; createdAt: string }) => ({
+                id: o.id, orderCode: o.id.slice(0, 7), amount: o.totalAmount, status: o.status, createdAt: o.createdAt,
+            }));
+            setInvoices(mapped);
             setLoading(false);
         }).catch(() => setLoading(false));
     }, []);
@@ -64,7 +68,7 @@ export default function BillingPage() {
 
     if (loading) return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {[1, 2, 3].map(i => <div key={i} style={{ height: i === 1 ? '120px' : '70px', borderRadius: '18px', background: 'var(--bg-card)',  }} />)}
+            {[1, 2, 3].map(i => <div key={i} style={{ height: i === 1 ? '120px' : '70px', borderRadius: '18px', background: 'var(--bg-card)', }} />)}
         </div>
     );
 
