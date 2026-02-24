@@ -36,6 +36,7 @@ const ROUTE_LABELS: Record<string, string> = {
     'timeline': 'Dòng thời gian',
     'changelog': 'Lịch sử cập nhật',
     'ai': 'Trung tâm AI',
+    'products': 'Giải pháp',
 };
 
 export default function Breadcrumbs() {

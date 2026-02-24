@@ -372,11 +372,16 @@ model Product {
   key          String   @unique
   slug         String   @unique
   name         String
-  tagline      String?  // 1 dòng outcome
+  tagline      String?  // 1 dòng mô tả ngắn
   outcomeText  String?  // mô tả kết quả
+  description  String?  @db.Text // mô tả chi tiết
+  usageGuide   String?  @db.Text // hướng dẫn sử dụng
   industry     String[] // SPA, SALES, PERSONAL
   icon         String?
-  priceMonthly Int      @default(0)
+  priceOriginal Int     @default(0) // giá gốc (VND)
+  priceRental   Int     @default(0) // giá thuê (VND/tháng)
+  priceSale     Int     @default(0) // giá bán (VND)
+  priceMonthly  Int     @default(0) // giá hiển thị cũ (backward compat)
   features     Json?    // [{text, included}]
   faq          Json?    // [{q, a}]
   isActive     Boolean  @default(true)
