@@ -6,8 +6,15 @@ export async function GET(
     { params }: { params: Promise<{ slug: string }> }
 ) {
     const { slug } = await params;
-    const product = await platformDb.product.findUnique({ where: { slug } });
-    if (!product || !product.isActive) {
+    const product = await platformDb.product.findUnique({
+        where: { slug },
+        include: {
+            meteredItems: { where: { isActive: true }, orderBy: { unitPrice: 'asc' } },
+            digitalAssets: { where: { isActive: true } },
+            plans: true,
+        },
+    });
+    if (!product || !product.isActive || product.status !== 'PUBLISHED') {
         return NextResponse.json({ error: 'Không tìm thấy sản phẩm' }, { status: 404 });
     }
     return NextResponse.json({ product });
