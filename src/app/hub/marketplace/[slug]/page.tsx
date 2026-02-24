@@ -23,6 +23,17 @@ const TYPE_BADGE: Record<string, { emoji: string; bg: string; color: string; lab
     DIGITAL: { emoji: '📥', bg: '#d1fae5', color: '#065f46', label: 'Tài liệu' },
 };
 
+const INDUSTRY_BADGE: Record<string, { emoji: string; bg: string; color: string; label: string }> = {
+    OPTICAL: { emoji: '👓', bg: '#ede9fe', color: '#5b21b6', label: 'Mắt kính' },
+    RETAIL: { emoji: '🛒', bg: '#fef3c7', color: '#92400e', label: 'Bán lẻ' },
+    SPA: { emoji: '💆', bg: '#fce7f3', color: '#9d174d', label: 'Spa' },
+    SALON: { emoji: '💇', bg: '#fff7ed', color: '#9a3412', label: 'Salon' },
+    CLINIC: { emoji: '🏥', bg: '#ecfdf5', color: '#065f46', label: 'Phòng khám' },
+    SALES: { emoji: '💼', bg: '#f0f9ff', color: '#075985', label: 'Bán hàng' },
+};
+
+interface RelatedProduct { id: string; slug: string; name: string; icon: string | null; priceMonthly: number; tagline: string | null; }
+
 export default function ProductDetailPage() {
     const params = useParams();
     const slug = params.slug as string;
@@ -30,6 +41,7 @@ export default function ProductDetailPage() {
     const { success, error: toastError } = useToast();
 
     const [product, setProduct] = useState<ProductDetail | null>(null);
+    const [related, setRelated] = useState<RelatedProduct[]>([]);
     const [loading, setLoading] = useState(true);
     const [wallet, setWallet] = useState<{ balanceAvailable: number; creditBalance: number } | null>(null);
     const [couponCode, setCouponCode] = useState('');
@@ -38,24 +50,26 @@ export default function ProductDetailPage() {
 
     // Load product
     useEffect(() => {
-        fetch(`/api/hub/products/${slug}`)
-            .then(r => r.json())
-            .then(d => {
-                setProduct(d.product || null);
-                if (d.product?.plans?.length) setSelectedPlanId(d.product.plans[0].plan.id);
-                setLoading(false);
-            })
-            .catch(() => setLoading(false));
-    }, [slug]);
-
-    // Load wallet balance
-    useEffect(() => {
-        fetch('/api/hub/wallet').then(r => r.ok ? r.json() : null).then(d => {
-            if (d?.balance !== undefined) {
-                setWallet({ balanceAvailable: d.balance, creditBalance: d.creditBalance || 0 });
+        if (!slug) return;
+        Promise.all([
+            fetch(`/api/hub/products/${slug}`).then(r => r.json()),
+            fetch('/api/hub/wallet').then(r => r.json()),
+        ]).then(([prodData, walData]) => {
+            setProduct(prodData.product || null);
+            if (walData?.balance !== undefined) {
+                setWallet({ balanceAvailable: walData.balance, creditBalance: walData.creditBalance || 0 });
             }
-        });
-    }, []);
+            if (prodData.product?.plans?.length === 1) setSelectedPlanId(prodData.product.plans[0].plan.id);
+            setLoading(false);
+            // Fetch related products (same industry)
+            if (prodData.product?.industry?.length) {
+                fetch(`/api/hub/products?industry=${prodData.product.industry[0]}&limit=4`)
+                    .then(r => r.json())
+                    .then(d => setRelated((d.products || []).filter((p: RelatedProduct) => p.slug !== slug).slice(0, 3)))
+                    .catch(() => { });
+            }
+        }).catch(() => setLoading(false));
+    }, [slug]);
 
     const getPrice = () => {
         if (!product) return 0;
@@ -136,6 +150,24 @@ export default function ProductDetailPage() {
                         </div>
                         {product.tagline && <p style={{ fontSize: '13px', color: 'var(--accent-primary)', fontWeight: 600, margin: 0 }}>{product.tagline}</p>}
                     </div>
+                </div>
+
+                {/* Industry badges */}
+                {product.industry && product.industry.length > 0 && (
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                        {(product.industry as string[]).map((ind: string) => {
+                            const ib = INDUSTRY_BADGE[ind];
+                            if (!ib) return null;
+                            return <span key={ind} style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '8px', fontWeight: 600, background: ib.bg, color: ib.color }}>{ib.emoji} {ib.label}</span>;
+                        })}
+                    </div>
+                )}
+
+                {/* Trust stats */}
+                <div style={{ display: 'flex', gap: '12px', padding: '10px 0', borderTop: '1px solid var(--border)', fontSize: '11px', color: 'var(--text-muted)' }}>
+                    <span>⭐ 4.8/5</span>
+                    <span>👥 150+ doanh nghiệp</span>
+                    <span>🔄 Cập nhật liên tục</span>
                 </div>
 
                 {/* Price display */}
@@ -233,6 +265,28 @@ export default function ProductDetailPage() {
                                 <div style={{ fontWeight: 600, fontSize: '13px', marginBottom: '3px' }}>❓ {item.q}</div>
                                 <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5, paddingLeft: '20px' }}>{item.a}</div>
                             </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Related Products */}
+            {related.length > 0 && (
+                <div style={{ padding: '16px', borderRadius: '18px', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                    <h3 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '10px' }}>🔗 Sản phẩm liên quan</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {related.map(rp => (
+                            <button key={rp.id} onClick={() => router.push(`/hub/marketplace/${rp.slug}`)} style={{
+                                display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '12px',
+                                border: '1px solid var(--border)', background: 'var(--bg-hover)', cursor: 'pointer', fontFamily: 'inherit', width: '100%', textAlign: 'left',
+                            }}>
+                                <span style={{ fontSize: '24px' }}>{rp.icon || '📦'}</span>
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ fontWeight: 600, fontSize: '13px' }}>{rp.name}</div>
+                                    {rp.tagline && <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{rp.tagline}</div>}
+                                </div>
+                                <span style={{ fontWeight: 700, fontSize: '12px', color: 'var(--accent-primary)' }}>{vnd(rp.priceMonthly)}</span>
+                            </button>
                         ))}
                     </div>
                 </div>
