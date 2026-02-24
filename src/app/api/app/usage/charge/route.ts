@@ -1,21 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { platformDb as db } from '@/lib/db/platform';
+import { getAnySession } from '@/lib/auth/jwt';
 
 // PAYG Usage Charge API — Fully hardened
 // Checks: auth → idempotency → entitlement → quota → rate limit → wallet lock → debit → receipt → notify
 export async function POST(req: NextRequest) {
-    const { cookies } = req;
-    const sessionToken = cookies.get('hub_session')?.value || cookies.get('emk_session')?.value;
-    if (!sessionToken) return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
-
-    let userId: string;
-    try {
-        const payload = JSON.parse(Buffer.from(sessionToken.split('.')[1] || '', 'base64').toString());
-        userId = payload.userId;
-        if (!userId) throw new Error('No userId');
-    } catch {
-        return NextResponse.json({ error: 'Token không hợp lệ' }, { status: 401 });
-    }
+    const session = await getAnySession();
+    if (!session) return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
+    const userId = session.userId;
 
     const { productId, meteredItemKey, quantity, requestId, metadata } = await req.json();
     if (!productId || !meteredItemKey || !requestId) {
@@ -99,7 +91,7 @@ export async function POST(req: NextRequest) {
         }, { status: 400 });
     }
 
-    // 7. Atomic: usage + debit + quota update
+    // 7. Atomic: usage + debit + quota update (with row lock)
     const result = await db.$transaction(async (tx) => {
         const usage = await tx.usageEvent.create({
             data: {
@@ -109,11 +101,21 @@ export async function POST(req: NextRequest) {
             },
         });
 
+        // Row lock: SELECT FOR UPDATE prevents concurrent double-spend
+        const [lockedWallet] = await tx.$queryRawUnsafe<Array<{ id: string; balanceAvailable: number; creditBalance: number }>>(
+            `SELECT "id", "balanceAvailable", "creditBalance" FROM "Wallet" WHERE "id" = $1 FOR UPDATE`,
+            wallet.id
+        );
+        const totalBal = lockedWallet.balanceAvailable + lockedWallet.creditBalance;
+        if (totalBal < total) {
+            throw new Error(`INSUFFICIENT_BALANCE:${totalBal}`);
+        }
+
         // Credit-first debit
         let creditUsed = 0;
         let realUsed = total;
-        if (wallet.creditBalance > 0) {
-            creditUsed = Math.min(wallet.creditBalance, total);
+        if (lockedWallet.creditBalance > 0) {
+            creditUsed = Math.min(lockedWallet.creditBalance, total);
             realUsed = total - creditUsed;
         }
 

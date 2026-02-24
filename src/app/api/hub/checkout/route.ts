@@ -1,23 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { platformDb as db } from '@/lib/db/platform';
+import { getAnySession } from '@/lib/auth/jwt';
 import crypto from 'crypto';
 
 // Hub Checkout: Product → Coupon → Order → Wallet Debit → Entitlement → Receipt → Notify
 // Supports: SUBSCRIPTION (CRM), ONE_TIME (DIGITAL), PAYG initial purchase (APP)
-// Hardened: idempotency, credit balance, coupon, receipt, notification, price snapshot
+// Hardened: idempotency, credit balance, coupon, receipt, notification, price snapshot, row lock
 export async function POST(req: NextRequest) {
-    const { cookies } = req;
-    const sessionToken = cookies.get('hub_session')?.value || cookies.get('emk_session')?.value;
-    if (!sessionToken) return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
-
-    let userId: string;
-    try {
-        const payload = JSON.parse(Buffer.from(sessionToken.split('.')[1] || '', 'base64').toString());
-        userId = payload.userId;
-        if (!userId) throw new Error('No userId');
-    } catch {
-        return NextResponse.json({ error: 'Token không hợp lệ' }, { status: 401 });
-    }
+    const session = await getAnySession();
+    if (!session) return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
+    const userId = session.userId;
 
     const body = await req.json();
     const { productId, planId, source, couponCode, idempotencyKey } = body;
@@ -108,13 +100,23 @@ export async function POST(req: NextRequest) {
             include: { items: true },
         });
 
-        // Debit wallet (credit first, then real balance)
+        // Debit wallet (credit first, then real balance) — with row lock
         if (chargeAmount > 0 && wallet) {
+            // Row lock: SELECT FOR UPDATE prevents concurrent double-spend
+            const [lockedWallet] = await tx.$queryRawUnsafe<Array<{ id: string; balanceAvailable: number; creditBalance: number }>>(
+                `SELECT "id", "balanceAvailable", "creditBalance" FROM "Wallet" WHERE "id" = $1 FOR UPDATE`,
+                wallet.id
+            );
+            const totalBal = lockedWallet.balanceAvailable + lockedWallet.creditBalance;
+            if (totalBal < chargeAmount) {
+                throw new Error(`INSUFFICIENT_BALANCE:${totalBal}`);
+            }
+
             let creditUsed = 0;
             let realUsed = chargeAmount;
 
-            if (wallet.creditBalance > 0) {
-                creditUsed = Math.min(wallet.creditBalance, chargeAmount);
+            if (lockedWallet.creditBalance > 0) {
+                creditUsed = Math.min(lockedWallet.creditBalance, chargeAmount);
                 realUsed = chargeAmount - creditUsed;
             }
 

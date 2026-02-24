@@ -1,24 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { platformDb as db } from '@/lib/db/platform';
+import { getAnySession } from '@/lib/auth/jwt';
 
 // GET — user's notifications
-export async function GET(req: NextRequest) {
-    const { cookies } = req;
-    const sessionToken = cookies.get('hub_session')?.value || cookies.get('emk_session')?.value;
-    if (!sessionToken) return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
-
-    let userId: string;
-    try {
-        const payload = JSON.parse(Buffer.from(sessionToken.split('.')[1] || '', 'base64').toString());
-        userId = payload.userId;
-        if (!userId) throw new Error();
-    } catch { return NextResponse.json({ error: 'Token không hợp lệ' }, { status: 401 }); }
-
-    const { searchParams } = new URL(req.url);
-    const status = searchParams.get('status');
+export async function GET() {
+    const session = await getAnySession();
+    if (!session) return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
+    const userId = session.userId;
 
     const notifs = await db.notificationQueue.findMany({
-        where: { userId, ...(status ? { status } : {}) },
+        where: { userId },
         orderBy: { createdAt: 'desc' }, take: 50,
     });
 
@@ -29,16 +20,9 @@ export async function GET(req: NextRequest) {
 
 // PATCH — mark as read
 export async function PATCH(req: NextRequest) {
-    const { cookies } = req;
-    const sessionToken = cookies.get('hub_session')?.value || cookies.get('emk_session')?.value;
-    if (!sessionToken) return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
-
-    let userId: string;
-    try {
-        const payload = JSON.parse(Buffer.from(sessionToken.split('.')[1] || '', 'base64').toString());
-        userId = payload.userId;
-        if (!userId) throw new Error();
-    } catch { return NextResponse.json({ error: 'Token không hợp lệ' }, { status: 401 }); }
+    const session = await getAnySession();
+    if (!session) return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
+    const userId = session.userId;
 
     const { id, markAllRead } = await req.json();
 

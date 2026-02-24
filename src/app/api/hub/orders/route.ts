@@ -1,18 +1,12 @@
 import { NextResponse } from 'next/server';
 import { platformDb as db } from '@/lib/db/platform';
+import { getAnySession } from '@/lib/auth/jwt';
 
 // GET — user's orders + receipts
-export async function GET(req: Request) {
-    const { cookies } = new URL(req.url) as unknown as { cookies: never };
-    const sessionToken = req.headers.get('cookie')?.match(/hub_session=([^;]+)/)?.[1] || req.headers.get('cookie')?.match(/emk_session=([^;]+)/)?.[1];
-    if (!sessionToken) return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
-
-    let userId: string;
-    try {
-        const payload = JSON.parse(Buffer.from(sessionToken.split('.')[1] || '', 'base64').toString());
-        userId = payload.userId;
-        if (!userId) throw new Error();
-    } catch { return NextResponse.json({ error: 'Token không hợp lệ' }, { status: 401 }); }
+export async function GET() {
+    const session = await getAnySession();
+    if (!session) return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
+    const userId = session.userId;
 
     const orders = await db.commerceOrder.findMany({
         where: { userId },

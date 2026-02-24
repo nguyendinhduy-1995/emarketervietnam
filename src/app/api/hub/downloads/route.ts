@@ -1,23 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { platformDb as db } from '@/lib/db/platform';
+import { getAnySession } from '@/lib/auth/jwt';
 import crypto from 'crypto';
 
 // GET — list user's download grants, or get signed download URL
 export async function GET(req: NextRequest) {
-    const { cookies } = req;
-    const sessionToken = cookies.get('hub_session')?.value || cookies.get('emk_session')?.value;
-    if (!sessionToken) {
-        return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
-    }
-
-    let userId: string;
-    try {
-        const payload = JSON.parse(Buffer.from(sessionToken.split('.')[1] || '', 'base64').toString());
-        userId = payload.userId;
-        if (!userId) throw new Error('No userId');
-    } catch {
-        return NextResponse.json({ error: 'Token không hợp lệ' }, { status: 401 });
-    }
+    const session = await getAnySession();
+    if (!session) return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
+    const userId = session.userId;
 
     const { searchParams } = new URL(req.url);
     const grantId = searchParams.get('grantId'); // if provided, generate download URL

@@ -81,15 +81,22 @@ export async function requireAdmin(
 }
 
 /**
- * Get workspaceId from request - either from header or first membership
+ * Get workspaceId from request - either from header (verified) or first membership.
+ * If X-Workspace-Id is provided, we VERIFY the user is a member of that workspace.
  */
 export async function resolveWorkspaceId(
     req: NextRequest,
     user: TokenPayload
 ): Promise<string | null> {
-    // Check header first
+    // Check header first — but VERIFY membership
     const headerWsId = req.headers.get('x-workspace-id');
-    if (headerWsId) return headerWsId;
+    if (headerWsId) {
+        const membership = await platformDb.membership.findUnique({
+            where: { workspaceId_userId: { workspaceId: headerWsId, userId: user.userId } },
+        });
+        if (membership) return headerWsId;
+        // Header provided but user is NOT a member — reject silently, fall through
+    }
 
     // Fall back to first membership
     const membership = await platformDb.membership.findFirst({

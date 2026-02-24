@@ -76,3 +76,24 @@ export async function clearCrmSessionCookie() {
     const cookieStore = await cookies();
     cookieStore.delete('crm_token');
 }
+
+// ─── Universal Session (tries Hub token, then CRM token) ────
+// Use this in commerce/API routes that serve both Hub and CRM users.
+
+export async function getAnySession(): Promise<TokenPayload | null> {
+    const cookieStore = await cookies();
+    // Try Hub token first
+    const hubToken = cookieStore.get('token')?.value;
+    if (hubToken) {
+        const payload = await verifyToken(hubToken);
+        if (payload) return payload;
+    }
+    // Try CRM token
+    const crmToken = cookieStore.get('crm_token')?.value;
+    if (crmToken) {
+        const payload = await verifyToken(crmToken);
+        if (payload) return payload;
+    }
+    return null;
+}
+
