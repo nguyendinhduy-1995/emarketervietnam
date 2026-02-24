@@ -1142,3 +1142,24 @@ model KbArticle {
   @@index([categoryId, isPublished])
   @@index([slug])
 }
+
+// ─── Admin Audit Log ─────────────────────────────────────
+model AdminAuditLog {
+  id           String   @id @default(cuid())
+  actorUserId  String
+  actorName    String?
+  action       String   // GRANT_ENTITLEMENT | REVOKE_ENTITLEMENT | UPDATE_PLAN | WALLET_ADJUST | USER_UPDATE | PRODUCT_UPDATE | REFUND
+  resource     String   // model name: Entitlement, User, Wallet, Product
+  resourceId   String
+  workspaceId  String?
+  before       Json?    // snapshot before change
+  after        Json?    // snapshot after change
+  reason       String?
+  ip           String?
+  createdAt    DateTime @default(now())
+
+  @@index([actorUserId, createdAt])
+  @@index([resource, resourceId])
+  @@index([workspaceId, createdAt])
+  @@index([action, createdAt])
+}
