@@ -42,9 +42,18 @@ export async function POST(req: NextRequest) {
                 where: { id: tokenUser.id },
                 data: { loginToken: null, loginTokenExpiry: null }
             });
+            // Resolve workspace for JWT
+            const membership = await platformDb.membership.findFirst({
+                where: { userId: tokenUser.id },
+                include: { workspace: { select: { orgId: true } } },
+                orderBy: { createdAt: 'asc' },
+            });
             const token = await signToken({
                 userId: tokenUser.id, email: tokenUser.email || tokenUser.phone,
                 name: tokenUser.name, isAdmin: tokenUser.isAdmin,
+                emkRole: tokenUser.emkRole || undefined,
+                orgId: membership?.workspace?.orgId || undefined,
+                workspaceId: membership?.workspaceId || undefined,
             });
             await setSessionCookie(token);
             return NextResponse.json({ user: { id: tokenUser.id, phone: tokenUser.phone, name: tokenUser.name, isAdmin: tokenUser.isAdmin } });
@@ -80,11 +89,21 @@ export async function POST(req: NextRequest) {
 
         loginAttempts.delete(ip);
 
+        // Resolve workspace for JWT
+        const membership = await platformDb.membership.findFirst({
+            where: { userId: user.id },
+            include: { workspace: { select: { orgId: true } } },
+            orderBy: { createdAt: 'asc' },
+        });
+
         const token = await signToken({
             userId: user.id,
             email: user.email || user.phone,
             name: user.name,
             isAdmin: user.isAdmin,
+            emkRole: user.emkRole || undefined,
+            orgId: membership?.workspace?.orgId || undefined,
+            workspaceId: membership?.workspaceId || undefined,
         });
 
         await setSessionCookie(token);

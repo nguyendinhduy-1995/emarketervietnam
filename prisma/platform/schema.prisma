@@ -64,6 +64,7 @@ model Org {
   id          String   @id @default(cuid())
   name        String
   ownerUserId String
+  status      String   @default("ACTIVE") // ACTIVE | SUSPENDED | CANCELED
   createdAt   DateTime @default(now())
 
   owner      User        @relation(fields: [ownerUserId], references: [id])

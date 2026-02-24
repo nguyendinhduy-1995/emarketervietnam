@@ -8,6 +8,9 @@ export interface TokenPayload extends JWTPayload {
     email: string;
     name: string;
     isAdmin?: boolean;
+    orgId?: string;        // primary org
+    workspaceId?: string;  // primary workspace
+    emkRole?: string;      // ADMIN | OPS | SALES | CS (null = not eMarketer staff)
 }
 
 export async function signToken(payload: TokenPayload): Promise<string> {
