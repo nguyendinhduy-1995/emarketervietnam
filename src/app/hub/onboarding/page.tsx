@@ -160,7 +160,7 @@ export default function OnboardingPage() {
                 }}>
                     <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>Mục tiêu chính của bạn?</h2>
                     <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 4px' }}>
-                        Chọn mục tiêu quan trọng nhất để chúng tôi gợi ý giải pháp
+                        Chọn mục tiêu quan trọng nhất để chúng tôi gợi ý sản phẩm
                     </p>
                     {goals.map(g => (
                         <button key={g.key} className="ob-card"

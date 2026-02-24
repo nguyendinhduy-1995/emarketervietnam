@@ -11,7 +11,7 @@ import SearchModal from '@/components/SearchModal';
 
 const navItems = [
     { href: '/hub', label: 'Tổng quan', exact: true },
-    { href: '/hub/marketplace', label: 'Giải pháp', exact: false },
+    { href: '/hub/marketplace', label: 'Sản phẩm', exact: false },
     { href: '/hub/account', label: 'Tài khoản', exact: false },
     { href: '/hub/notifications', label: 'Thông báo', exact: false },
 ];
@@ -27,7 +27,7 @@ function NavIcon({ type, active }: { type: string; active: boolean }) {
                 <polyline points="9 22 9 12 15 12 15 22" />
             </svg>
         );
-        case 'Giải pháp': return (
+        case 'Sản phẩm': return (
             <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="2" y="7" width="20" height="14" rx="2" ry="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
             </svg>

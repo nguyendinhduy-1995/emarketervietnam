@@ -8,7 +8,7 @@ const PAGES: SearchResult[] = [
     { type: 'page', label: 'Hub Tổng quan', href: '/hub', icon: '🏠' },
     { type: 'page', label: 'Không gian', href: '/hub/workspaces', icon: '📦' },
     { type: 'page', label: 'Tài khoản', href: '/hub/account', icon: '👤' },
-    { type: 'page', label: 'Giải pháp', href: '/hub/marketplace', icon: '🛒' },
+    { type: 'page', label: 'Sản phẩm', href: '/hub/marketplace', icon: '🛒' },
     { type: 'page', label: 'Cài đặt', href: '/hub/settings', icon: '⚙️' },
     { type: 'page', label: 'Thông báo', href: '/hub/notifications', icon: '🔔' },
     { type: 'page', label: 'CRM Dashboard', href: '/emk-crm', icon: '📊' },

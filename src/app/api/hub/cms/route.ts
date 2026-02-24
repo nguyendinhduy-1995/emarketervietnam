@@ -29,7 +29,7 @@ export async function GET() {
                 {
                     id: 'default-1',
                     title: 'Chào mừng đến eMarketer Hub',
-                    excerpt: 'eMarketer Hub là nền tảng tập hợp tất cả giải pháp, ứng dụng và công cụ marketing cho doanh nghiệp của bạn.',
+                    excerpt: 'eMarketer Hub là nền tảng tập hợp tất cả sản phẩm, ứng dụng và công cụ marketing cho doanh nghiệp của bạn.',
                     body: 'eMarketer Hub giúp bạn quản lý toàn bộ hoạt động kinh doanh từ một nơi duy nhất. Tạo workspace, mời nhân viên và bắt đầu sử dụng ngay.',
                     category: 'Tin tức',
                     createdAt: new Date().toISOString(),

@@ -59,7 +59,7 @@ export default function ProductDetailPage() {
     if (!product) return (
         <div style={{ textAlign: 'center', padding: '48px 24px' }}>
             <div style={{ fontSize: '40px', marginBottom: '8px' }}>🔍</div>
-            <p style={{ fontWeight: 600 }}>Không tìm thấy giải pháp</p>
+            <p style={{ fontWeight: 600 }}>Không tìm thấy sản phẩm</p>
             <button onClick={() => router.push('/hub/marketplace')} style={{
                 marginTop: '12px', padding: '10px 20px', borderRadius: '12px',
                 background: 'var(--accent-gradient)', border: 'none', color: 'white',
@@ -75,7 +75,7 @@ export default function ProductDetailPage() {
                 background: 'none', border: 'none', color: 'var(--text-muted)',
                 fontSize: '14px', cursor: 'pointer', alignSelf: 'flex-start',
                 fontFamily: 'inherit', padding: 0,
-            }}>← Giải pháp</button>
+            }}>← Sản phẩm</button>
 
             {/* Hero */}
             <div style={{ padding: '24px 20px', borderRadius: '20px', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>

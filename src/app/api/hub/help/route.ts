@@ -6,7 +6,7 @@ const DEFAULT_DOCS = [
     {
         id: 'help-1', productKey: 'HUB', moduleKey: 'getting-started', title: 'Bắt đầu sử dụng eMarketer Hub',
         slug: 'getting-started', sortOrder: 0,
-        contentMd: `## Chào mừng đến eMarketer Hub!\n\neMarketer Hub là nền tảng trung tâm giúp bạn quản lý toàn bộ hoạt động kinh doanh.\n\n### Bước 1: Tạo Workspace\nSau khi đăng nhập, hệ thống sẽ tạo workspace cho bạn. Workspace là không gian làm việc riêng cho doanh nghiệp.\n\n### Bước 2: Khám phá giải pháp\nTruy cập **Giải pháp** để xem các sản phẩm phù hợp với ngành của bạn.\n\n### Bước 3: Nạp tiền ví\nVào **Ví** → **Nạp tiền** để nạp tiền qua QR Banking nhanh chóng.`,
+        contentMd: `## Chào mừng đến eMarketer Hub!\n\neMarketer Hub là nền tảng trung tâm giúp bạn quản lý toàn bộ hoạt động kinh doanh.\n\n### Bước 1: Tạo Workspace\nSau khi đăng nhập, hệ thống sẽ tạo workspace cho bạn. Workspace là không gian làm việc riêng cho doanh nghiệp.\n\n### Bước 2: Khám phá sản phẩm\nTruy cập **Sản phẩm** để xem các sản phẩm phù hợp với ngành của bạn.\n\n### Bước 3: Nạp tiền ví\nVào **Ví** → **Nạp tiền** để nạp tiền qua QR Banking nhanh chóng.`,
     },
     {
         id: 'help-2', productKey: 'HUB', moduleKey: 'wallet', title: 'Hướng dẫn sử dụng Ví',
@@ -14,9 +14,9 @@ const DEFAULT_DOCS = [
         contentMd: `## Ví eMarketer\n\n### Nạp tiền\n1. Vào mục **Ví** → chọn **Nạp tiền**\n2. Chọn số tiền cần nạp (100k, 200k, 500k, 1M)\n3. Quét mã QR hoặc chuyển khoản theo nội dung\n4. Hệ thống xác nhận tự động trong 1-5 phút\n\n### Xem lịch sử giao dịch\nTất cả giao dịch nạp/chi tiêu đều hiển thị trong phần **Lịch sử** của Ví.\n\n### Lưu ý\n- Số tiền nạp tối thiểu: **100,000 VND**\n- Nội dung chuyển khoản phải đúng để xác nhận tự động`,
     },
     {
-        id: 'help-3', productKey: 'HUB', moduleKey: 'marketplace', title: 'Giải pháp & Marketplace',
+        id: 'help-3', productKey: 'HUB', moduleKey: 'marketplace', title: 'Sản phẩm & Marketplace',
         slug: 'marketplace-guide', sortOrder: 2,
-        contentMd: `## Marketplace\n\nMarketplace là nơi bạn khám phá và kích hoạt các giải pháp cho doanh nghiệp.\n\n### Các giải pháp hiện có\n- **SPA CRM** — Quản lý khách hàng, đặt lịch cho Spa\n- **Sales Hub** — Pipeline bán hàng, quản lý lead\n- **Personal CRM** — CRM cá nhân cho freelancer\n\n### Cách kích hoạt\n1. Chọn giải pháp phù hợp\n2. Xem chi tiết và so sánh gói\n3. Nhấn **Dùng thử** hoặc **Mua ngay**\n4. Giải pháp sẽ xuất hiện ngay trong workspace`,
+        contentMd: `## Marketplace\n\nMarketplace là nơi bạn khám phá và kích hoạt các sản phẩm cho doanh nghiệp.\n\n### Các sản phẩm hiện có\n- **SPA CRM** — Quản lý khách hàng, đặt lịch cho Spa\n- **Sales Hub** — Pipeline bán hàng, quản lý lead\n- **Personal CRM** — CRM cá nhân cho freelancer\n\n### Cách kích hoạt\n1. Chọn sản phẩm phù hợp\n2. Xem chi tiết và so sánh gói\n3. Nhấn **Dùng thử** hoặc **Mua ngay**\n4. Sản phẩm sẽ xuất hiện ngay trong workspace`,
     },
     {
         id: 'help-4', productKey: 'HUB', moduleKey: 'account', title: 'Quản lý tài khoản',

@@ -99,7 +99,7 @@ export default function AccountPage() {
                         </div>
                         <div style={{ padding: '14px 8px', borderRadius: '14px', textAlign: 'center', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
                             <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--accent-primary)' }}>{sub ? `${sub.modules || 0}` : '—'}</div>
-                            <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>Giải pháp</div>
+                            <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>Sản phẩm</div>
                         </div>
                         <div style={{ padding: '14px 8px', borderRadius: '14px', textAlign: 'center', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
                             <div style={{ fontSize: '16px', fontWeight: 800, color: sub?.status === 'TRIAL' ? '#f59e0b' : '#22c55e' }}>
@@ -117,7 +117,7 @@ export default function AccountPage() {
                         </Link>
                         <Link href="/hub/billing" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px', borderRadius: '14px', background: 'var(--bg-card)', border: '1px solid var(--border)', textDecoration: 'none', color: 'var(--text-primary)' }}>
                             <span style={{ fontSize: '20px' }}>💳</span>
-                            <div><div style={{ fontWeight: 700, fontSize: '13px' }}>Giải pháp</div><div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Module & App</div></div>
+                            <div><div style={{ fontWeight: 700, fontSize: '13px' }}>Sản phẩm</div><div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Module & App</div></div>
                         </Link>
                     </div>
                 </>

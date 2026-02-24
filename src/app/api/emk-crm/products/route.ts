@@ -27,13 +27,13 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { name, tagline, description, usageGuide, industry, icon, priceOriginal, priceRental, priceSale, features, faq } = body;
 
-    if (!name) return NextResponse.json({ error: 'Tên giải pháp là bắt buộc' }, { status: 400 });
+    if (!name) return NextResponse.json({ error: 'Tên sản phẩm là bắt buộc' }, { status: 400 });
 
     const slug = slugify(name);
     const key = slug.toUpperCase().replace(/-/g, '_');
 
     const existing = await db.product.findFirst({ where: { OR: [{ slug }, { key }] } });
-    if (existing) return NextResponse.json({ error: 'Giải pháp đã tồn tại' }, { status: 400 });
+    if (existing) return NextResponse.json({ error: 'Sản phẩm đã tồn tại' }, { status: 400 });
 
     const product = await db.product.create({
         data: {

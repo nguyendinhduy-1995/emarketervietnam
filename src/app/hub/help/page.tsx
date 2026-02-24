@@ -13,7 +13,7 @@ interface HelpDoc {
 const MODULES: Record<string, { label: string; icon: string; color: string }> = {
     'getting-started': { label: 'Bắt đầu', icon: '🚀', color: '#6366f1' },
     'wallet': { label: 'Ví', icon: '💰', color: '#22c55e' },
-    'marketplace': { label: 'Giải pháp', icon: '🛒', color: '#3b82f6' },
+    'marketplace': { label: 'Sản phẩm', icon: '🛒', color: '#3b82f6' },
     'account': { label: 'Tài khoản', icon: '👤', color: '#8b5cf6' },
     'faq': { label: 'FAQ', icon: '❓', color: '#f59e0b' },
 };

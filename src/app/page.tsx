@@ -16,7 +16,7 @@ export default function Home() {
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <Link href="/gioi-thieu" className="landing-nav-link" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', textDecoration: 'none' }}>Giới thiệu</Link>
-          <Link href="/giai-phap" className="landing-nav-link" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', textDecoration: 'none' }}>Giải pháp</Link>
+          <Link href="/giai-phap" className="landing-nav-link" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', textDecoration: 'none' }}>Sản phẩm</Link>
           <Link href="/hub" style={{
             padding: '8px 16px', borderRadius: '12px', fontWeight: 700, fontSize: '13px',
             background: 'var(--accent-primary)', color: 'white', textDecoration: 'none',
@@ -44,7 +44,7 @@ export default function Home() {
             background: 'var(--accent-primary)', boxShadow: '0 4px 20px rgba(99,102,241,0.3)',
           }}>Dùng thử miễn phí →</Link>
           <Link href="/giai-phap" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', textDecoration: 'none' }}>
-            Xem tất cả giải pháp
+            Xem tất cả sản phẩm
           </Link>
         </div>
       </section>
@@ -73,7 +73,7 @@ export default function Home() {
 
       {/* Industry CTAs */}
       <section style={{ padding: '32px 16px', maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
-        <h2 style={{ fontSize: 'clamp(20px, 5vw, 28px)', fontWeight: 800, marginBottom: '20px' }}>Giải pháp theo ngành</h2>
+        <h2 style={{ fontSize: 'clamp(20px, 5vw, 28px)', fontWeight: 800, marginBottom: '20px' }}>Sản phẩm theo ngành</h2>
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '10px' }}>
           {[
             { href: '/lp/spa', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></svg>, label: 'Spa & Salon' },

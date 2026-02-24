@@ -11,7 +11,7 @@ const ROUTE_LABELS: Record<string, string> = {
     'account': 'Tài khoản',
     'billing': 'Thanh toán',
     'wallet': 'Ví tiền',
-    'marketplace': 'Giải pháp',
+    'marketplace': 'Sản phẩm',
     'help': 'Trợ giúp',
     'support': 'Hỗ trợ',
     'import': 'Import',
@@ -36,7 +36,7 @@ const ROUTE_LABELS: Record<string, string> = {
     'timeline': 'Dòng thời gian',
     'changelog': 'Lịch sử cập nhật',
     'ai': 'Trung tâm AI',
-    'products': 'Giải pháp',
+    'products': 'Sản phẩm',
 };
 
 export default function Breadcrumbs() {

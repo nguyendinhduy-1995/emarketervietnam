@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
     // 1. Search pages (static navigation)
     const pages = [
         { title: 'Tổng quan', url: '/hub', icon: '🏠', keywords: 'overview tong quan home' },
-        { title: 'Giải pháp', url: '/hub/marketplace', icon: '🛒', keywords: 'marketplace giai phap solution' },
+        { title: 'Sản phẩm', url: '/hub/marketplace', icon: '🛒', keywords: 'marketplace san pham solution' },
         { title: 'Tài khoản', url: '/hub/account', icon: '👤', keywords: 'account tai khoan profile' },
         { title: 'Thông báo', url: '/hub/notifications', icon: '🔔', keywords: 'notification thong bao' },
         { title: 'Ví', url: '/hub/wallet', icon: '💰', keywords: 'wallet vi tien money' },

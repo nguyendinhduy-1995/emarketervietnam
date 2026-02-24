@@ -40,7 +40,7 @@ const sidebarItems = [
     { href: '/emk-crm/dashboard', icon: 'dashboard', label: 'Bảng điều khiển', exact: false, group: 'manage' },
     { href: '/emk-crm/accounts', icon: 'accounts', label: 'Tài khoản Hub', exact: false, group: 'manage' },
     { href: '/emk-crm/topups', icon: 'topups', label: 'Nạp tiền', exact: false, group: 'manage' },
-    { href: '/emk-crm/products', icon: 'products', label: 'Giải pháp', exact: false, group: 'manage' },
+    { href: '/emk-crm/products', icon: 'products', label: 'Sản phẩm', exact: false, group: 'manage' },
     { href: '/emk-crm/tasks', icon: 'tasks', label: 'Công việc', exact: false, group: 'ops' },
     { href: '/emk-crm/users', icon: 'shield', label: 'Nhân sự CRM', exact: false, group: 'ops' },
     { href: '/emk-crm/affiliates', icon: 'affiliates', label: 'Đại lý & Hoa hồng', exact: false, group: 'ops' },

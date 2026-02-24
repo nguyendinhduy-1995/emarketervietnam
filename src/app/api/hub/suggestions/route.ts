@@ -79,7 +79,7 @@ export async function GET() {
                 desc: 'Quản lý khách hàng, leads & pipeline',
                 icon: '📊',
                 price: '299.000đ/tháng',
-                reason: 'Giải pháp phổ biến nhất',
+                reason: 'Sản phẩm phổ biến nhất',
             });
         }
 

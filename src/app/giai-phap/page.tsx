@@ -2,8 +2,8 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Giải pháp – eMarketer Vietnam',
-    description: 'Các giải pháp CRM theo ngành: Spa, Salon, Bán hàng, Cá nhân.',
+    title: 'Sản phẩm – eMarketer Vietnam',
+    description: 'Các sản phẩm CRM theo ngành: Spa, Salon, Bán hàng, Cá nhân.',
 };
 
 const solutions = [
@@ -23,8 +23,8 @@ export default function GiaiPhapPage() {
             </nav>
 
             <section className="px-4 py-16 max-w-4xl mx-auto">
-                <h1 className="text-3xl font-extrabold mb-2">Giải pháp theo ngành</h1>
-                <p className="text-lg mb-10" style={{ color: 'var(--text-secondary)' }}>Chọn giải pháp phù hợp với mô hình kinh doanh của bạn.</p>
+                <h1 className="text-3xl font-extrabold mb-2">Sản phẩm theo ngành</h1>
+                <p className="text-lg mb-10" style={{ color: 'var(--text-secondary)' }}>Chọn sản phẩm phù hợp với mô hình kinh doanh của bạn.</p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {solutions.map((s, i) => (

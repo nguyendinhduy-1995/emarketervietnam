@@ -50,13 +50,13 @@ export default function MarketplacePage() {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div>
-                <h1 style={{ fontSize: '24px', fontWeight: 800, marginBottom: '4px' }}>🛒 Giải pháp</h1>
-                <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Chọn giải pháp phù hợp với mục tiêu của bạn</p>
+                <h1 style={{ fontSize: '24px', fontWeight: 800, marginBottom: '4px' }}>🛒 Sản phẩm</h1>
+                <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Chọn sản phẩm phù hợp với mục tiêu của bạn</p>
             </div>
 
             {/* Search */}
             <input
-                type="text" placeholder="Tìm giải pháp..." value={search}
+                type="text" placeholder="Tìm sản phẩm..." value={search}
                 onChange={e => setSearch(e.target.value)}
                 style={{
                     width: '100%', padding: '12px 16px', borderRadius: '14px',
@@ -85,7 +85,7 @@ export default function MarketplacePage() {
             {filtered.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '48px 24px', borderRadius: '20px', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
                     <div style={{ fontSize: '40px', marginBottom: '8px' }}>🔍</div>
-                    <p style={{ fontWeight: 600 }}>Không tìm thấy giải pháp</p>
+                    <p style={{ fontWeight: 600 }}>Không tìm thấy sản phẩm</p>
                     <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>Thử thay đổi bộ lọc</p>
                 </div>
             ) : (

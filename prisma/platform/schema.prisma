@@ -367,6 +367,15 @@ model HelpDoc {
 
 // ─── Hub Marketplace Products ─────────────────────────────
 
+model ProductCategory {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  icon      String   @default("📁")
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
 model Product {
   id           String   @id @default(cuid())
   key          String   @unique

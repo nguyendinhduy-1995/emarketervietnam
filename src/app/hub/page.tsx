@@ -102,7 +102,7 @@ export default function HubDashboard() {
             <div className="grid-actions-2">
                 <Link href="/hub/marketplace" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px', borderRadius: '16px', background: 'var(--bg-card)', border: '1px solid var(--border)', textDecoration: 'none', color: 'var(--text-primary)' }}>
                     <span style={{ fontSize: '24px' }}>🛒</span>
-                    <div><div style={{ fontWeight: 700, fontSize: '14px' }}>Giải pháp</div><div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Khám phá công cụ</div></div>
+                    <div><div style={{ fontWeight: 700, fontSize: '14px' }}>Sản phẩm</div><div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Khám phá công cụ</div></div>
                 </Link>
                 <Link href="/hub/account" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px', borderRadius: '16px', background: 'var(--bg-card)', border: '1px solid var(--border)', textDecoration: 'none', color: 'var(--text-primary)' }}>
                     <span style={{ fontSize: '24px' }}>👤</span>

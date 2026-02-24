@@ -5,7 +5,7 @@ export default function PricingPage() {
         <div className="container" style={{ padding: '60px 20px' }}>
             <div className="page-header" style={{ textAlign: 'center', marginBottom: '48px' }}>
                 <h1>Bảng giá minh bạch</h1>
-                <p>Miễn phí mãi mãi cho CRM cơ bản. Mở rộng với giải pháp khi bạn sẵn sàng.</p>
+                <p>Miễn phí mãi mãi cho CRM cơ bản. Mở rộng với sản phẩm khi bạn sẵn sàng.</p>
             </div>
 
             <div className="grid grid-3" style={{ maxWidth: '1000px', margin: '0 auto', alignItems: 'start' }}>
@@ -43,13 +43,13 @@ export default function PricingPage() {
                         ⭐ PHỔ BIẾN NHẤT
                     </div>
                     <h3 style={{ fontSize: '20px', fontWeight: 600 }}>Khởi đầu</h3>
-                    <div className="price">199K₫<span className="price-period">/giải pháp/tháng</span></div>
+                    <div className="price">199K₫<span className="price-period">/sản phẩm/tháng</span></div>
                     <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '24px' }}>
-                        Chọn giải pháp bạn cần
+                        Chọn sản phẩm bạn cần
                     </p>
                     <ul>
                         <li>Tất cả tính năng gói Miễn phí</li>
-                        <li>Chọn giải pháp: Hộp thư, Tự động hoá, Đặt lịch...</li>
+                        <li>Chọn sản phẩm: Hộp thư, Tự động hoá, Đặt lịch...</li>
                         <li>Hỗ trợ ưu tiên</li>
                         <li>Báo cáo nâng cao</li>
                         <li>Đa người dùng (3 người)</li>
@@ -64,11 +64,11 @@ export default function PricingPage() {
                     <h3 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-secondary)' }}>Chuyên nghiệp</h3>
                     <div className="price">699K₫<span className="price-period">/tháng</span></div>
                     <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '24px' }}>
-                        Tất cả giải pháp + AI
+                        Tất cả sản phẩm + AI
                     </p>
                     <ul>
                         <li>Tất cả tính năng gói Khởi đầu</li>
-                        <li>Tất cả giải pháp đã mở</li>
+                        <li>Tất cả sản phẩm đã mở</li>
                         <li>Bộ AI (dùng khoá riêng)</li>
                         <li>Truy cập API</li>
                         <li>Không giới hạn người dùng</li>
@@ -82,12 +82,12 @@ export default function PricingPage() {
 
             {/* Module pricing */}
             <div style={{ maxWidth: '800px', margin: '60px auto 0', textAlign: 'center' }}>
-                <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '32px' }}>Giá từng giải pháp</h2>
+                <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '32px' }}>Giá từng sản phẩm</h2>
                 <div className="table-container">
                     <table>
                         <thead>
                             <tr>
-                                <th>Giải pháp</th>
+                                <th>Sản phẩm</th>
                                 <th>Giá/tháng</th>
                                 <th>Mô tả</th>
                             </tr>

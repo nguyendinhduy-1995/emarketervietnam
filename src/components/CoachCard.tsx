@@ -34,7 +34,7 @@ export default function CoachCard({ hasCompletedOnboarding, hasWorkspaces, taskC
     } else if (taskCount === 0) {
         tip = {
             icon: '🛒',
-            title: 'Khám phá giải pháp',
+            title: 'Khám phá sản phẩm',
             subtitle: 'Tìm gói dịch vụ phù hợp cho bạn',
             href: '/hub/marketplace',
         };

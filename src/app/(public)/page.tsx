@@ -31,7 +31,7 @@ export default function HomePage() {
                         { icon: '📅', title: 'Lịch hẹn thông minh', desc: 'Đặt lịch, nhắc hẹn tự động, chống trùng ca và quản lý lịch trực quan.' },
                         { icon: '💆', title: 'Dịch vụ & Nhân viên', desc: 'Quản lý menu dịch vụ, phân ca nhân viên, tính hoa hồng tự động.' },
                         { icon: '🧾', title: 'Phiếu thu & Doanh thu', desc: 'Tạo phiếu thu nhanh, theo dõi công nợ, báo cáo doanh thu tức thời.' },
-                        { icon: '📦', title: 'Kho giải pháp mở rộng', desc: 'Mở rộng CRM với Hộp thư, Tự động hoá, Đặt lịch, Phân tích và Trợ lý AI.' },
+                        { icon: '📦', title: 'Kho sản phẩm mở rộng', desc: 'Mở rộng CRM với Hộp thư, Tự động hoá, Đặt lịch, Phân tích và Trợ lý AI.' },
                         { icon: '🔐', title: 'Bảo mật & Đa chi nhánh', desc: 'Mỗi Spa có không gian riêng, dữ liệu cách ly hoàn toàn, mã hoá khoá AI.' },
                     ].map((f, i) => (
                         <div key={i} className="card animate-in" style={{ animationDelay: `${0.1 * i}s` }}>
