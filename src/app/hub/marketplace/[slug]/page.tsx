@@ -47,6 +47,10 @@ export default function ProductDetailPage() {
     const [couponCode, setCouponCode] = useState('');
     const [purchasing, setPurchasing] = useState(false);
     const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+    // Trial
+    const [showTrialModal, setShowTrialModal] = useState(false);
+    const [shopName, setShopName] = useState('');
+    const [trialing, setTrialing] = useState(false);
 
     // Load product
     useEffect(() => {
@@ -95,7 +99,8 @@ export default function ProductDetailPage() {
             const data = await res.json();
             if (data.ok) {
                 success(`Mua "${product.name}" thành công! ${data.discount > 0 ? `Đã giảm ${vnd(data.discount)}` : ''}`);
-                if (data.productType === 'DIGITAL') router.push('/hub/downloads');
+                if (data.redirectUrl) router.push(data.redirectUrl);
+                else if (data.productType === 'DIGITAL') router.push('/hub/downloads');
                 else router.push('/hub/orders');
             } else {
                 if (data.code === 'INSUFFICIENT_BALANCE') {
@@ -106,6 +111,30 @@ export default function ProductDetailPage() {
             }
         } catch { toastError('Lỗi kết nối'); }
         setPurchasing(false);
+    };
+
+    const handleTrial = async () => {
+        if (!product || !shopName.trim()) return;
+        setTrialing(true);
+        try {
+            const res = await fetch('/api/hub/trial', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ productId: product.id, shopName: shopName.trim() }),
+            });
+            const data = await res.json();
+            if (data.ok) {
+                success(data.message);
+                router.push(data.redirectUrl || '/smk-crm');
+            } else if (data.existingSlug) {
+                toastError(data.error);
+                router.push(data.redirectUrl || '/smk-crm');
+            } else {
+                toastError(data.error || 'Không thể tạo dùng thử');
+            }
+        } catch { toastError('Lỗi kết nối'); }
+        setTrialing(false);
+        setShowTrialModal(false);
     };
 
     if (loading) return (
@@ -328,7 +357,19 @@ export default function ProductDetailPage() {
                 </div>
             )}
 
-            {/* CTA */}
+            {/* Trial CTA */}
+            {product.deliveryMethod === 'PROVISION_TENANT' && (
+                <button onClick={() => setShowTrialModal(true)} disabled={trialing} style={{
+                    width: '100%', padding: '14px', borderRadius: '16px', marginBottom: '8px',
+                    background: 'transparent', border: '2px solid var(--accent-primary)',
+                    color: 'var(--accent-primary)', fontWeight: 700, fontSize: '15px',
+                    cursor: trialing ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+                }}>
+                    🎁 Dùng thử miễn phí 14 ngày
+                </button>
+            )}
+
+            {/* Buy CTA */}
             <button onClick={handleCheckout} disabled={purchasing || (price > 0 && insufficient)} style={{
                 width: '100%', padding: '16px', borderRadius: '16px',
                 background: purchasing || (price > 0 && insufficient) ? 'var(--bg-hover)' : 'var(--accent-gradient)',
@@ -336,8 +377,67 @@ export default function ProductDetailPage() {
                 fontWeight: 700, fontSize: '16px', cursor: purchasing || (price > 0 && insufficient) ? 'not-allowed' : 'pointer',
                 fontFamily: 'inherit', boxShadow: purchasing || (price > 0 && insufficient) ? 'none' : 'var(--shadow-glow)',
             }}>
-                {purchasing ? '⏳ Đang xử lý…' : price > 0 ? `💳 Thanh toán ${vnd(price)}` : product.billingModel === 'PAYG' ? '🚀 Kích hoạt' : '✅ Áp dụng miễn phí'}
+                {purchasing ? '⏳ Đang xử lý…' : price > 0 ? `💳 Thuê ngay ${vnd(price)}/tháng` : product.billingModel === 'PAYG' ? '🚀 Kích hoạt' : '✅ Áp dụng miễn phí'}
             </button>
+
+            {/* Trial Modal */}
+            {showTrialModal && (
+                <div style={{
+                    position: 'fixed', inset: 0, zIndex: 1000,
+                    background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px',
+                }} onClick={() => setShowTrialModal(false)}>
+                    <div onClick={e => e.stopPropagation()} style={{
+                        background: 'var(--bg-card)', borderRadius: '24px', padding: '28px',
+                        width: '100%', maxWidth: '400px', border: '1px solid var(--border)',
+                        boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
+                    }}>
+                        <div style={{ fontSize: '32px', textAlign: 'center', marginBottom: '8px' }}>🎉</div>
+                        <h2 style={{ fontSize: '18px', fontWeight: 800, textAlign: 'center', marginBottom: '4px' }}>Dùng thử miễn phí 14 ngày</h2>
+                        <p style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', marginBottom: '20px' }}>
+                            Trải nghiệm đầy đủ tính năng CRM — không cần thẻ tín dụng
+                        </p>
+
+                        <label style={{ fontSize: '13px', fontWeight: 600, marginBottom: '6px', display: 'block' }}>Tên cửa hàng của bạn</label>
+                        <input
+                            value={shopName} onChange={e => setShopName(e.target.value)}
+                            placeholder="VD: Mắt Kính Quận 1"
+                            autoFocus
+                            onKeyDown={e => e.key === 'Enter' && shopName.trim() && handleTrial()}
+                            style={{
+                                width: '100%', padding: '12px 14px', borderRadius: '12px',
+                                border: '2px solid var(--accent-primary)', fontSize: '15px',
+                                fontFamily: 'inherit', fontWeight: 600, background: 'var(--bg)',
+                                marginBottom: '16px', boxSizing: 'border-box',
+                            }}
+                        />
+
+                        <div style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
+                            <button onClick={handleTrial} disabled={!shopName.trim() || trialing} style={{
+                                width: '100%', padding: '14px', borderRadius: '14px',
+                                background: !shopName.trim() || trialing ? 'var(--bg-hover)' : 'var(--accent-gradient)',
+                                border: 'none', color: !shopName.trim() || trialing ? 'var(--text-muted)' : 'white',
+                                fontWeight: 700, fontSize: '15px', cursor: !shopName.trim() || trialing ? 'not-allowed' : 'pointer',
+                                fontFamily: 'inherit', boxShadow: !shopName.trim() ? 'none' : 'var(--shadow-glow)',
+                            }}>
+                                {trialing ? '⏳ Đang tạo...' : '🚀 Bắt đầu dùng thử'}
+                            </button>
+                            <button onClick={() => setShowTrialModal(false)} style={{
+                                width: '100%', padding: '10px', borderRadius: '12px', background: 'none',
+                                border: '1px solid var(--border)', color: 'var(--text-muted)',
+                                fontWeight: 600, fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit',
+                            }}>
+                                Huỷ
+                            </button>
+                        </div>
+
+                        <div style={{ marginTop: '16px', padding: '10px 12px', borderRadius: '10px', background: 'var(--bg-hover)', fontSize: '11px', color: 'var(--text-muted)' }}>
+                            ✅ Đầy đủ tính năng · ✅ Không cần thanh toán · ✅ Huỷ bất cứ lúc nào<br />
+                            ⏰ Sau 14 ngày nếu không đăng ký, dữ liệu sẽ bị xoá tự động.
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
