@@ -8,6 +8,7 @@ import Breadcrumbs from '@/components/Breadcrumbs';
 import AiChatWidget from '@/components/AiChatWidget';
 import AnalyticsTracker from '@/components/AnalyticsTracker';
 import SearchModal from '@/components/SearchModal';
+import { EntitlementProvider } from '@/hooks/useEntitlement';
 
 const navItems = [
     { href: '/hub', label: 'Tổng quan', exact: true },
@@ -224,7 +225,9 @@ export default function HubLayout({ children }: { children: React.ReactNode }) {
             }}>
                 <Breadcrumbs />
                 <SolutionSuggestion />
-                {children}
+                <EntitlementProvider>
+                    {children}
+                </EntitlementProvider>
             </main>
 
             {/* Bottom Nav — 4 items, beautiful design */}
