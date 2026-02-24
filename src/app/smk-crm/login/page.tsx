@@ -31,7 +31,7 @@ export default function AdminLoginPage() {
 
             // Get redirect URL or default to /admin
             const params = new URLSearchParams(window.location.search);
-            const redirect = params.get('redirect') || '/admin';
+            const redirect = params.get('redirect') || '/smk-crm';
             router.push(redirect);
             router.refresh();
         } catch {

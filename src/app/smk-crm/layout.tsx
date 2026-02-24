@@ -1,4 +1,5 @@
 'use client';
+import './smk-admin.css';
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -15,47 +16,47 @@ const NAV_SECTIONS: { title: string | null; items: { href: string; icon: string;
     {
         title: null, // no header for primary
         items: [
-            { href: '/admin', icon: '📊', label: 'Tổng quan', perm: 'dashboard' },
+            { href: '/smk-crm', icon: '📊', label: 'Tổng quan', perm: 'dashboard' },
         ],
     },
     {
         title: 'Bán hàng',
         items: [
-            { href: '/admin/products', icon: '📦', label: 'Sản phẩm', perm: 'products' },
-            { href: '/admin/prescription', icon: '👓', label: 'Tròng kính', perm: 'products', featureKey: 'ADV_PRESCRIPTION' },
-            { href: '/admin/orders', icon: '🧾', label: 'Đơn hàng', perm: 'orders' },
-            { href: '/admin/shipping', icon: '🚚', label: 'Vận chuyển', perm: 'orders', featureKey: 'ADV_SHIPPING' },
-            { href: '/admin/returns', icon: '↩️', label: 'Đổi trả', perm: 'orders', featureKey: 'ADV_RETURNS' },
-            { href: '/admin/warehouse', icon: '🏭', label: 'Kho hàng', perm: 'products', featureKey: 'ADV_WAREHOUSE' },
+            { href: '/smk-crm/products', icon: '📦', label: 'Sản phẩm', perm: 'products' },
+            { href: '/smk-crm/prescription', icon: '👓', label: 'Tròng kính', perm: 'products', featureKey: 'ADV_PRESCRIPTION' },
+            { href: '/smk-crm/orders', icon: '🧾', label: 'Đơn hàng', perm: 'orders' },
+            { href: '/smk-crm/shipping', icon: '🚚', label: 'Vận chuyển', perm: 'orders', featureKey: 'ADV_SHIPPING' },
+            { href: '/smk-crm/returns', icon: '↩️', label: 'Đổi trả', perm: 'orders', featureKey: 'ADV_RETURNS' },
+            { href: '/smk-crm/warehouse', icon: '🏭', label: 'Kho hàng', perm: 'products', featureKey: 'ADV_WAREHOUSE' },
         ],
     },
     {
         title: 'Khách hàng',
         items: [
-            { href: '/admin/customers', icon: '👥', label: 'Khách hàng', perm: 'customers' },
-            { href: '/admin/support', icon: '🎧', label: 'Hỗ trợ', perm: 'customers', featureKey: 'ADV_SUPPORT' },
-            { href: '/admin/reviews', icon: '⭐', label: 'Đánh giá', perm: 'products', featureKey: 'ADV_REVIEWS' },
+            { href: '/smk-crm/customers', icon: '👥', label: 'Khách hàng', perm: 'customers' },
+            { href: '/smk-crm/support', icon: '🎧', label: 'Hỗ trợ', perm: 'customers', featureKey: 'ADV_SUPPORT' },
+            { href: '/smk-crm/reviews', icon: '⭐', label: 'Đánh giá', perm: 'products', featureKey: 'ADV_REVIEWS' },
         ],
     },
     {
         title: 'Đối tác',
         items: [
-            { href: '/admin/partners', icon: '🤝', label: 'Đại lý', perm: 'partners', featureKey: 'ADV_PARTNER' },
-            { href: '/admin/commissions', icon: '💰', label: 'Hoa hồng', perm: 'commissions', featureKey: 'ADV_PARTNER' },
-            { href: '/admin/payouts', icon: '🏦', label: 'Chi trả', perm: 'payouts', featureKey: 'ADV_PARTNER' },
-            { href: '/admin/fraud', icon: '🛡️', label: 'Gian lận', perm: 'fraud', featureKey: 'ADV_PARTNER' },
+            { href: '/smk-crm/partners', icon: '🤝', label: 'Đại lý', perm: 'partners', featureKey: 'ADV_PARTNER' },
+            { href: '/smk-crm/commissions', icon: '💰', label: 'Hoa hồng', perm: 'commissions', featureKey: 'ADV_PARTNER' },
+            { href: '/smk-crm/payouts', icon: '🏦', label: 'Chi trả', perm: 'payouts', featureKey: 'ADV_PARTNER' },
+            { href: '/smk-crm/fraud', icon: '🛡️', label: 'Gian lận', perm: 'fraud', featureKey: 'ADV_PARTNER' },
         ],
     },
     {
         title: 'Hệ thống',
         items: [
-            { href: '/admin/automation', icon: '⚡', label: 'Tự động', perm: 'automation', featureKey: 'ADV_AUTOMATION' },
-            { href: '/admin/ai', icon: '🤖', label: 'AI', perm: 'ai', featureKey: 'ADV_AI' },
-            { href: '/admin/analytics', icon: '📈', label: 'Phân tích', perm: 'analytics', featureKey: 'ADV_ANALYTICS' },
-            { href: '/admin/seo', icon: '🔍', label: 'SEO', perm: 'analytics', featureKey: 'ADV_SEO' },
-            { href: '/admin/audit', icon: '📋', label: 'Nhật ký', perm: 'users' },
-            { href: '/admin/users', icon: '👤', label: 'Người dùng', perm: 'users' },
-            { href: '/admin/entitlements', icon: '🔑', label: 'Tính năng', perm: 'users' },
+            { href: '/smk-crm/automation', icon: '⚡', label: 'Tự động', perm: 'automation', featureKey: 'ADV_AUTOMATION' },
+            { href: '/smk-crm/ai', icon: '🤖', label: 'AI', perm: 'ai', featureKey: 'ADV_AI' },
+            { href: '/smk-crm/analytics', icon: '📈', label: 'Phân tích', perm: 'analytics', featureKey: 'ADV_ANALYTICS' },
+            { href: '/smk-crm/seo', icon: '🔍', label: 'SEO', perm: 'analytics', featureKey: 'ADV_SEO' },
+            { href: '/smk-crm/audit', icon: '📋', label: 'Nhật ký', perm: 'users' },
+            { href: '/smk-crm/users', icon: '👤', label: 'Người dùng', perm: 'users' },
+            { href: '/smk-crm/entitlements', icon: '🔑', label: 'Tính năng', perm: 'users' },
         ],
     },
 ];
@@ -83,15 +84,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     // Keyboard shortcuts
     const shortcuts = useMemo(() => [
         { key: 'k', label: 'Tìm kiếm', action: () => { const btn = document.querySelector('.admin-header__search-trigger') as HTMLButtonElement; btn?.click(); }, meta: true },
-        { key: 'g', label: 'Tổng quan', action: () => router.push('/admin'), meta: false },
-        { key: 'o', label: 'Đơn hàng', action: () => router.push('/admin/orders'), meta: false },
-        { key: 'p', label: 'Sản phẩm', action: () => router.push('/admin/products'), meta: false },
+        { key: 'g', label: 'Tổng quan', action: () => router.push('/smk-crm'), meta: false },
+        { key: 'o', label: 'Đơn hàng', action: () => router.push('/smk-crm/orders'), meta: false },
+        { key: 'p', label: 'Sản phẩm', action: () => router.push('/smk-crm/products'), meta: false },
     ], [router]);
     const { showHelp, setShowHelp } = useKeyboardShortcuts(shortcuts);
 
     // Read session from cookie (client-side) — MUST be before any conditional return
     useEffect(() => {
-        if (pathname === '/admin/login') return; // skip for login page
+        if (pathname === '/smk-crm/login') return; // skip for login page
         try {
             const cookies = document.cookie.split(';').reduce((acc, c) => {
                 const [k, v] = c.trim().split('=');
@@ -122,13 +123,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }, [pathname]);
 
     // If on login page, render children without layout
-    if (pathname === '/admin/login') {
+    if (pathname === '/smk-crm/login') {
         return <>{children}</>;
     }
 
     const handleLogout = async () => {
         await fetch('/api/smk/auth/admin/logout', { method: 'POST' });
-        router.push('/admin/login');
+        router.push('/smk-crm/login');
         router.refresh();
     };
 
@@ -195,7 +196,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
             <aside className={`admin-sidebar ${sidebarOpen ? 'admin-sidebar--open' : ''}`}>
                 <Link
-                    href="/admin"
+                    href="/smk-crm"
                     style={{
                         fontFamily: 'var(--font-heading)',
                         fontSize: 15,
@@ -228,7 +229,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                 </div>
                             )}
                             {section.items.map((item) => {
-                                const isActive = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href));
+                                const isActive = pathname === item.href || (item.href !== '/smk-crm' && pathname.startsWith(item.href));
                                 return (
                                     <Link
                                         key={item.href}

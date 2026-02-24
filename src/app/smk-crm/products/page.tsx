@@ -198,7 +198,7 @@ export default function AdminProductsPage() {
             {/* ═══ Page Title + Actions ═══ */}
             <div className="admin-page-title">
                 <nav className="admin-page-title__breadcrumb">
-                    <a href="/admin" className="admin-page-title__breadcrumb-link">Admin</a>
+                    <a href="/smk-crm" className="admin-page-title__breadcrumb-link">Admin</a>
                     <span className="admin-page-title__breadcrumb-sep">›</span>
                     <span className="admin-page-title__breadcrumb-current">Sản phẩm</span>
                 </nav>

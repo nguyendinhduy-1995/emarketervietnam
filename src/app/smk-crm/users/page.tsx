@@ -99,7 +99,7 @@ export default function AdminUsersPage() {
     return (
         <div className="animate-in">
             <nav style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginBottom: 'var(--space-2)' }}>
-                <Link href="/admin" style={{ color: 'var(--text-tertiary)', textDecoration: 'none' }}>Admin</Link>{' › '}<span style={{ color: 'var(--text-primary)' }}>Users</span>
+                <Link href="/smk-crm" style={{ color: 'var(--text-tertiary)', textDecoration: 'none' }}>Admin</Link>{' › '}<span style={{ color: 'var(--text-primary)' }}>Users</span>
             </nav>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--space-4)', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
                 <div>

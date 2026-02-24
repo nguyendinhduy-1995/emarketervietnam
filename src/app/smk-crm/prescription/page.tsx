@@ -60,7 +60,7 @@ export default function AdminPrescriptionPage() {
     return (
         <div className="animate-in">
             <nav style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginBottom: 'var(--space-2)' }}>
-                <Link href="/admin" style={{ color: 'var(--text-tertiary)', textDecoration: 'none' }}>Admin</Link>
+                <Link href="/smk-crm" style={{ color: 'var(--text-tertiary)', textDecoration: 'none' }}>Admin</Link>
                 {' › '}<span style={{ color: 'var(--text-primary)' }}>Đơn kính</span>
             </nav>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-2)', flexWrap: 'wrap', gap: 'var(--space-3)' }}>

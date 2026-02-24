@@ -11,29 +11,29 @@ interface NavItem {
 }
 
 const MAIN_ITEMS: NavItem[] = [
-    { href: '/admin', icon: '📊', label: 'Tổng quan' },
-    { href: '/admin/products', icon: '📦', label: 'Sản phẩm' },
-    { href: '/admin/orders', icon: '🛒', label: 'Đơn hàng' },
-    { href: '/admin/customers', icon: '👥', label: 'Khách hàng' },
+    { href: '/smk-crm', icon: '📊', label: 'Tổng quan' },
+    { href: '/smk-crm/products', icon: '📦', label: 'Sản phẩm' },
+    { href: '/smk-crm/orders', icon: '🛒', label: 'Đơn hàng' },
+    { href: '/smk-crm/customers', icon: '👥', label: 'Khách hàng' },
 ];
 
 const MORE_ITEMS: NavItem[] = [
-    { href: '/admin/warehouse', icon: '🏭', label: 'Kho hàng' },
-    { href: '/admin/returns', icon: '↩️', label: 'Đổi trả' },
-    { href: '/admin/support', icon: '🎧', label: 'Hỗ trợ' },
-    { href: '/admin/reviews', icon: '⭐', label: 'Đánh giá' },
-    { href: '/admin/partners', icon: '🤝', label: 'Đối tác' },
-    { href: '/admin/commissions', icon: '💰', label: 'Hoa hồng' },
-    { href: '/admin/payouts', icon: '💸', label: 'Rút tiền' },
-    { href: '/admin/automation', icon: '⚡', label: 'Tự động' },
-    { href: '/admin/ai', icon: '🤖', label: 'AI & KB' },
-    { href: '/admin/analytics', icon: '📈', label: 'Phân tích' },
-    { href: '/admin/seo', icon: '🔍', label: 'SEO' },
-    { href: '/admin/fraud', icon: '🛡️', label: 'Chống gian lận' },
-    { href: '/admin/audit', icon: '📋', label: 'Nhật ký' },
-    { href: '/admin/users', icon: '👤', label: 'Users' },
-    { href: '/admin/prescription', icon: '👁️', label: 'Đơn kính' },
-    { href: '/admin/shipping', icon: '🚚', label: 'Vận chuyển' },
+    { href: '/smk-crm/warehouse', icon: '🏭', label: 'Kho hàng' },
+    { href: '/smk-crm/returns', icon: '↩️', label: 'Đổi trả' },
+    { href: '/smk-crm/support', icon: '🎧', label: 'Hỗ trợ' },
+    { href: '/smk-crm/reviews', icon: '⭐', label: 'Đánh giá' },
+    { href: '/smk-crm/partners', icon: '🤝', label: 'Đối tác' },
+    { href: '/smk-crm/commissions', icon: '💰', label: 'Hoa hồng' },
+    { href: '/smk-crm/payouts', icon: '💸', label: 'Rút tiền' },
+    { href: '/smk-crm/automation', icon: '⚡', label: 'Tự động' },
+    { href: '/smk-crm/ai', icon: '🤖', label: 'AI & KB' },
+    { href: '/smk-crm/analytics', icon: '📈', label: 'Phân tích' },
+    { href: '/smk-crm/seo', icon: '🔍', label: 'SEO' },
+    { href: '/smk-crm/fraud', icon: '🛡️', label: 'Chống gian lận' },
+    { href: '/smk-crm/audit', icon: '📋', label: 'Nhật ký' },
+    { href: '/smk-crm/users', icon: '👤', label: 'Users' },
+    { href: '/smk-crm/prescription', icon: '👁️', label: 'Đơn kính' },
+    { href: '/smk-crm/shipping', icon: '🚚', label: 'Vận chuyển' },
 ];
 
 export default function BottomNav() {
@@ -41,7 +41,7 @@ export default function BottomNav() {
     const [moreOpen, setMoreOpen] = useState(false);
 
     const isActive = (href: string) => {
-        if (href === '/admin') return pathname === '/admin';
+        if (href === '/smk-crm') return pathname === '/smk-crm';
         return pathname.startsWith(href);
     };
 

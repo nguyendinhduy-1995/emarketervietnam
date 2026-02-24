@@ -48,7 +48,7 @@ export default function NotificationCenter() {
                         type: 'order',
                         title: `Đơn mới: ${o.code}`,
                         detail: `${o.user?.name || 'Khách'} — ${new Intl.NumberFormat('vi-VN').format(o.total)}₫`,
-                        link: '/admin/orders',
+                        link: '/smk-crm/orders',
                         time: 'Vừa tạo',
                         read: false,
                     });
@@ -63,7 +63,7 @@ export default function NotificationCenter() {
                         type: 'payout',
                         title: 'Yêu cầu rút tiền',
                         detail: `${p.partner?.partnerCode || '?'} — ${new Intl.NumberFormat('vi-VN').format(p.amount)}₫`,
-                        link: '/admin/payouts',
+                        link: '/smk-crm/payouts',
                         time: 'Chờ duyệt',
                         read: false,
                     });
@@ -78,7 +78,7 @@ export default function NotificationCenter() {
                         type: 'fraud',
                         title: `Cảnh báo gian lận`,
                         detail: `${a.partner?.partnerCode || '?'} — Score: ${a.flaggedScore}`,
-                        link: '/admin/fraud',
+                        link: '/smk-crm/fraud',
                         time: 'Cần xử lý',
                         read: false,
                     });
@@ -92,7 +92,7 @@ export default function NotificationCenter() {
                     type: 'stock',
                     title: 'Tồn kho thấp',
                     detail: `${data.lowStockCount} sản phẩm cần nhập thêm`,
-                    link: '/admin/warehouse',
+                    link: '/smk-crm/warehouse',
                     time: 'Kiểm tra',
                     read: false,
                 });
@@ -102,10 +102,10 @@ export default function NotificationCenter() {
         } catch {
             // Use demo data on error
             setNotifications([
-                { id: 'demo-1', type: 'order', title: 'Đơn mới: SMK-0042', detail: 'Nguyễn Văn A — 4.590.000₫', link: '/admin/orders', time: '2 phút trước', read: false },
-                { id: 'demo-2', type: 'return', title: 'Yêu cầu đổi trả', detail: 'RMA-00005 — Kính bị xước', link: '/admin/returns', time: '15 phút trước', read: false },
-                { id: 'demo-3', type: 'payout', title: 'Rút tiền chờ duyệt', detail: 'DUY123 — 1.500.000₫', link: '/admin/payouts', time: '1 giờ trước', read: true },
-                { id: 'demo-4', type: 'stock', title: 'Tồn kho thấp', detail: 'Cat Eye Retro Pink — còn 2', link: '/admin/warehouse', time: 'Hôm nay', read: true },
+                { id: 'demo-1', type: 'order', title: 'Đơn mới: SMK-0042', detail: 'Nguyễn Văn A — 4.590.000₫', link: '/smk-crm/orders', time: '2 phút trước', read: false },
+                { id: 'demo-2', type: 'return', title: 'Yêu cầu đổi trả', detail: 'RMA-00005 — Kính bị xước', link: '/smk-crm/returns', time: '15 phút trước', read: false },
+                { id: 'demo-3', type: 'payout', title: 'Rút tiền chờ duyệt', detail: 'DUY123 — 1.500.000₫', link: '/smk-crm/payouts', time: '1 giờ trước', read: true },
+                { id: 'demo-4', type: 'stock', title: 'Tồn kho thấp', detail: 'Cat Eye Retro Pink — còn 2', link: '/smk-crm/warehouse', time: 'Hôm nay', read: true },
             ]);
         } finally {
             setLoading(false);

@@ -181,7 +181,7 @@ export default function ProductCreateWizard() {
             const res = await fetch('/api/smk/admin/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
             const data = await res.json();
             if (data.error) setErrors(data.errors || [data.error]);
-            else { showToast('🎉 Đã đăng sản phẩm!'); setTimeout(() => { window.location.href = '/admin/products'; }, 1500); }
+            else { showToast('🎉 Đã đăng sản phẩm!'); setTimeout(() => { window.location.href = '/smk-crm/products'; }, 1500); }
         } catch { setErrors(['❌ Đăng sản phẩm thất bại']); }
         setPublishing(false);
     };
@@ -206,7 +206,7 @@ export default function ProductCreateWizard() {
         <div className="animate-in" style={{ maxWidth: 720, margin: '0 auto', paddingBottom: 100 }}>
             {/* Breadcrumb */}
             <nav style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginBottom: 'var(--space-3)' }}>
-                <Link href="/admin" style={{ color: 'var(--text-tertiary)', textDecoration: 'none' }}>Admin</Link>{' › '}
+                <Link href="/smk-crm" style={{ color: 'var(--text-tertiary)', textDecoration: 'none' }}>Admin</Link>{' › '}
                 <Link href="/smk-crm/products" style={{ color: 'var(--text-tertiary)', textDecoration: 'none' }}>Sản phẩm</Link>{' › '}
                 <span style={{ color: 'var(--text-primary)' }}>Đăng mới</span>
             </nav>
