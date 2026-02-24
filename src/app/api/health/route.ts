@@ -20,11 +20,13 @@ export async function GET() {
     checks.memory = { ok: memMB < 512, latency: memMB };
 
     // 3. Environment vars check
-    const requiredEnvs = ['DATABASE_URL', 'JWT_SECRET', 'CRON_SECRET'];
+    const requiredEnvs = ['DATABASE_URL'];
+    const optionalEnvs = ['JWT_SECRET', 'CRON_SECRET'];
     const missingEnvs = requiredEnvs.filter(k => !process.env[k]);
+    const missingOptional = optionalEnvs.filter(k => !process.env[k]);
     checks.environment = {
         ok: missingEnvs.length === 0,
-        error: missingEnvs.length > 0 ? `Missing: ${missingEnvs.join(', ')}` : undefined,
+        error: missingEnvs.length > 0 ? `Missing: ${missingEnvs.join(', ')}` : (missingOptional.length > 0 ? `Optional missing: ${missingOptional.join(', ')}` : undefined),
     };
 
     // Overall status

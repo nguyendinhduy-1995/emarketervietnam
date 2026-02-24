@@ -34,8 +34,8 @@ export default function SaasDashPage() {
             <h1 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 4px' }}>📊 SaaS Dashboard</h1>
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '16px' }}>Tổng quan kinh doanh SaaS — Cập nhật real-time</p>
 
-            {/* KPI Cards — 2x2 grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '16px' }}>
+            {/* KPI Cards — responsive grid */}
+            <div className="saas-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '16px' }}>
                 <KpiCard title="MRR" value={vnd(data.mrr)} icon="💰" color="#6366f1" />
                 <KpiCard title="Doanh thu 30 ngày" value={vnd(data.revenue30d)} icon="📊" color="#10b981" />
                 <KpiCard title="Churn Rate" value={`${data.churn.rate}%`} icon="🔻" color={data.churn.rate > 5 ? '#ef4444' : '#10b981'} sub={`${data.churn.canceled30d} hủy / 30d`} />
@@ -94,3 +94,4 @@ function StatBlock({ label, value, color }: { label: string; value: number; colo
         </div>
     );
 }
+
