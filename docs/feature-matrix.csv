@@ -1,0 +1,26 @@
+featureKey,name,tier,dependency,coreSafe,uiFiles,apiRoutes,dbModels
+CORE_DASHBOARD,CRM Dashboard,Core,,Yes,emk-crm/page.tsx,api/emk-crm/dashboard,EmkAccount|EmkLead
+CORE_LEADS,Lead Management,Core,,Yes,emk-crm/leads/*,api/emk-crm/accounts|api/emk-crm/ingest,EmkLead|EmkNote
+CORE_TASKS,Task Management,Core,,Yes,emk-crm/tasks/*,api/emk-crm/tasks,EmkTask
+CORE_BILLING,Wallet & Billing,Core,,Yes,hub/billing/*,api/hub/wallet/*|api/emk-crm/wallets,Wallet|WalletLedger|TopupIntent
+CORE_MARKETPLACE,Marketplace,Core,,Yes,hub/marketplace/*,api/hub/products/*,Product|Plan
+CORE_TEAM,Team Management,Core,,Yes,hub/team/*,api/hub/team,Membership
+CORE_SUPPORT,Support Tickets,Core,,Yes,hub/support/*,api/hub/support/*,SupportTicket|TicketMessage
+AI_ASSISTANT,AI Chat Assistant,Add-on,AI Provider Key,Yes,components/AiChatWidget,api/ai/chat,AiProviderKey
+AI_ANALYTICS,AI Analytics,Add-on,AI Provider Key,Yes,emk-crm/analytics,api/ai/analytics,
+AI_LEAD_SCORE,AI Lead Scoring,Add-on,AI Provider Key,Yes,emk-crm/leads,api/ai/lead-score,
+AI_CHURN,AI Churn Prediction,Add-on,AI Provider Key,Yes,emk-crm/dashboard,api/ai/churn,
+AI_GENERATE,AI Content Generator,Add-on,AI Provider Key,Yes,modal,api/ai/generate,
+AI_SUMMARY,AI Summary,Add-on,AI Provider Key,Yes,inline,api/ai/summary,
+AUTOMATION,Automation Rules,Add-on,,Yes,emk-crm/automation,api/emk-crm/automation,
+DRIP_CAMPAIGN,Drip Campaigns,Add-on,AUTOMATION,Yes,emk-crm/drip,api/emk-crm/drip,EmkDripCampaign|EmkDripLog
+MESSAGING,Messaging (SMS/Zalo),Add-on,,Yes,emk-crm/messaging,api/emk-crm/messaging,
+DATA_EXPORT,Data Export,Add-on,,Yes,export button,api/emk-crm/export,
+ONLINE_BOOKING,Online Booking,Add-on,,Yes,public /book/*,api/public/book/[slug],
+CMS,CMS / Blog,Add-on,,Yes,emk-crm/cms,api/emk-crm/cms,CmsPost
+DIGITAL_ASSETS,Digital Products,Add-on,,Yes,hub/downloads,api/hub/downloads|api/emk-crm/digital-assets,DigitalAsset|DownloadGrant
+AFFILIATES,Affiliate System,Add-on,,Yes,emk-crm/affiliates,api/emk-crm/affiliates|api/emk-crm/commissions,AffiliateAccount|Commission|Referral
+EMAIL_TEMPLATES,Email Templates,Add-on,,Yes,emk-crm/templates,api/emk-crm/templates,EmkEmailTemplate
+KNOWLEDGE_BASE,Knowledge Base,Add-on,,Yes,hub/help,api/hub/help,KbCategory|KbArticle
+AI_SETTINGS,AI Settings Vault,Add-on,AI Provider Key,Yes,emk-crm/ai-settings,api/ai/settings,AiProviderKey
+FINANCE_ADMIN,Finance & Reconciliation,Admin,,Yes,emk-crm/finance,"api/emk-crm/reconciliation|refunds|coupons",Receipt|RefundRecord|Coupon
