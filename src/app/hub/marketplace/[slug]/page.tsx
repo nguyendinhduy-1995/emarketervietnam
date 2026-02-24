@@ -50,7 +50,11 @@ export default function ProductDetailPage() {
 
     // Load wallet balance
     useEffect(() => {
-        fetch('/api/hub/wallet').then(r => r.ok ? r.json() : null).then(d => { if (d?.wallet) setWallet(d.wallet); });
+        fetch('/api/hub/wallet').then(r => r.ok ? r.json() : null).then(d => {
+            if (d?.balance !== undefined) {
+                setWallet({ balanceAvailable: d.balance, creditBalance: d.creditBalance || 0 });
+            }
+        });
     }, []);
 
     const getPrice = () => {
