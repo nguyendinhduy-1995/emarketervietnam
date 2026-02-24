@@ -10,18 +10,11 @@
     "prisma:generate": "npx prisma generate --schema=prisma/platform/schema.prisma && npx prisma generate --schema=prisma/spa/schema.prisma",
     "prisma:push": "npx prisma db push --schema=prisma/platform/schema.prisma && npx prisma db push --schema=prisma/spa/schema.prisma",
     "prisma:seed": "npx tsx prisma/seed.ts",
-    "worker": "npx tsx workers/index.ts",
-    "build:worker": "npx tsc --project tsconfig.worker.json",
-    "setup": "npm run prisma:generate && npm run prisma:push && npm run prisma:seed",
-    "test:e2e": "playwright test",
-    "test:e2e-ui": "playwright test --ui",
-    "verify": "sh scripts/verify.sh"
+    "setup": "npm run prisma:generate && npm run prisma:push && npm run prisma:seed"
   },
   "dependencies": {
     "@prisma/client": "^6.19.2",
     "bcryptjs": "^3.0.3",
-    "bullmq": "^5.70.1",
-    "ioredis": "^5.9.3",
     "jose": "^6.1.3",
     "next": "16.1.6",
     "nodemailer": "^8.0.1",
@@ -33,7 +26,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@playwright/test": "^1.58.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/nodemailer": "^7.0.11",
