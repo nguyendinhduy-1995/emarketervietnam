@@ -1,0 +1,19 @@
+// ─── AI Content Generation ────────────────────────────────
+
+model AIContentLog {
+  id        String   @id @default(cuid())
+  productId String?
+  channel   String   // "website", "facebook", "tiktok", "zalo"
+  tone      String   // "casual", "premium", "young", "kol_review"
+  input     Json     // { name, price, imageUrls[] }
+  output    Json     // full AI response JSON
+  tokens    Int?
+  latencyMs Int?
+  applied   Boolean  @default(false)
+  createdBy String
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+  @@index([createdAt])
+  @@map("ai_content_logs")
+}

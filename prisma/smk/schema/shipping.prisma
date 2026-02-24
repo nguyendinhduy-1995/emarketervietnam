@@ -1,0 +1,137 @@
+// ─── Shipping & Returns ───────────────────────────────────
+
+model CarrierConfig {
+  id              String      @id @default(cuid())
+  carrier         CarrierCode @unique
+  name            String       // Display name: "Giao Hàng Nhanh"
+  enabled         Boolean     @default(false)
+  mode            SyncMode    @default(WEBHOOK)
+  apiKey          String?
+  apiUrl          String?
+  webhookSecret   String?
+  config          Json?        // Extra per-carrier settings
+  lastHealthCheck DateTime?
+  lastError       String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@map("carrier_configs")
+}
+
+enum CarrierCode {
+  GHN
+  GHTK
+  VIETTEL_POST
+  JT
+  NINJA_VAN
+  VNPOST
+  AHAMOVE
+  OTHER
+}
+
+enum SyncMode {
+  WEBHOOK
+  POLL
+  HYBRID
+}
+
+model Shipment {
+  id            String         @id @default(cuid())
+  orderId       String
+  order         Order          @relation(fields: [orderId], references: [id])
+  carrier       CarrierCode
+  trackingCode  String         @unique
+  status        ShipmentStatus @default(CREATED)
+  shippedAt     DateTime?
+  deliveredAt   DateTime?
+  failedAt      DateTime?
+  returnedAt    DateTime?
+  slaDeadline   DateTime?      // shippedAt + X days → alert if missed
+  estimatedAt   DateTime?      // Carrier ETA
+  weight        Int?           // grams
+  codAmount     Int?           // COD amount if applicable
+  shippingFee   Int?
+  carrierRef    String?        // Carrier's internal order ID
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  events ShipmentEvent[]
+
+  @@index([orderId])
+  @@index([carrier])
+  @@index([status])
+  @@index([trackingCode])
+  @@index([slaDeadline])
+  @@map("shipments")
+}
+
+enum ShipmentStatus {
+  CREATED
+  PICKED_UP
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  FAILED_DELIVERY
+  RETURNED_TO_SENDER
+  CANCELLED
+}
+
+model ShipmentEvent {
+  id              String         @id @default(cuid())
+  shipmentId      String
+  shipment        Shipment       @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  carrierStatus   String         // Raw status from carrier API
+  mappedStatus    ShipmentStatus // Normalized internal status
+  location        String?
+  note            String?
+  occurredAt      DateTime
+  idempotencyKey  String         @unique // carrierCode + trackingCode + carrierStatus + occurredAt hash
+  createdAt       DateTime       @default(now())
+
+  @@index([shipmentId])
+  @@index([occurredAt])
+  @@map("shipment_events")
+}
+
+// ─── Returns / RMA / Warranty ─────────────────────────────
+
+model ReturnRequest {
+  id           String       @id @default(cuid())
+  code         String       @unique // RMA-XXXXX
+  orderId      String
+  order        Order        @relation(fields: [orderId], references: [id])
+  userId       String
+  user         User         @relation(fields: [userId], references: [id])
+  type         ReturnType
+  reason       String
+  description  String?      @db.Text
+  media        Json?        // [{ url, type }] photos/video evidence
+  status       ReturnStatus @default(PENDING)
+  resolution   String?      // "refund", "exchange", "repair"
+  refundAmount Int?
+  adminNote    String?
+  processedBy  String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([orderId])
+  @@index([userId])
+  @@index([status])
+  @@index([type])
+  @@map("return_requests")
+}
+
+enum ReturnType {
+  RETURN       // Đổi trả
+  EXCHANGE     // Đổi sản phẩm
+  WARRANTY     // Bảo hành
+}
+
+enum ReturnStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PROCESSING
+  COMPLETED
+  CANCELLED
+}

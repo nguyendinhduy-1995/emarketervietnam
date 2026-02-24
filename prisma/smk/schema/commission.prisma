@@ -1,0 +1,92 @@
+// ─── Commission & Wallet ──────────────────────────────────
+
+model CommissionRule {
+  id           String        @id @default(cuid())
+  scope        CommScope
+  scopeId      String?
+  partnerLevel PartnerLevel?
+  percent      Float
+  fixed        Int?
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+
+  @@index([scope, scopeId])
+  @@map("commission_rules")
+}
+
+enum CommScope {
+  GLOBAL
+  CATEGORY
+  PRODUCT
+}
+
+model Commission {
+  id        String           @id @default(cuid())
+  orderId   String
+  order     Order            @relation(fields: [orderId], references: [id])
+  partnerId String
+  partner   PartnerProfile   @relation(fields: [partnerId], references: [id])
+  amount    Int
+  status    CommissionStatus @default(PENDING)
+  holdUntil DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([partnerId])
+  @@index([orderId])
+  @@index([status])
+  @@map("commissions")
+}
+
+enum CommissionStatus {
+  PENDING
+  AVAILABLE
+  REVERSED
+  PAID
+}
+
+model PartnerWalletTx {
+  id           String         @id @default(cuid())
+  partnerId    String
+  partner      PartnerProfile @relation(fields: [partnerId], references: [id])
+  type         WalletTxType
+  amount       Int
+  refId        String?
+  balanceAfter Int
+  note         String?
+  createdAt    DateTime       @default(now())
+
+  @@index([partnerId])
+  @@index([createdAt])
+  @@map("partner_wallet_txs")
+}
+
+enum WalletTxType {
+  EARN
+  COMMISSION
+  REVERSE
+  PAYOUT
+}
+
+model PayoutRequest {
+  id        String       @id @default(cuid())
+  partnerId String
+  partner   PartnerProfile @relation(fields: [partnerId], references: [id])
+  amount    Int
+  status    PayoutStatus @default(REQUESTED)
+  note      String?
+  adminNote String?
+  paidAt    DateTime?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([partnerId])
+  @@index([status])
+  @@map("payout_requests")
+}
+
+enum PayoutStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  PAID
+}

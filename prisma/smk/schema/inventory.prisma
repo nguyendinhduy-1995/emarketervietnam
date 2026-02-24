@@ -1,0 +1,128 @@
+// ─── Inventory Ledger ─────────────────────────────────────
+
+model Warehouse {
+  id       String  @id @default(cuid())
+  name     String  // "Kho HCM", "Kho HN"
+  code     String  @unique
+  address  String?
+  isActive Boolean @default(true)
+
+  entries    InventoryLedger[]
+  vouchers   InventoryVoucher[]
+  stocktakes Stocktake[]
+
+  @@map("warehouses")
+}
+
+model InventoryVoucher {
+  id          String        @id @default(cuid())
+  code        String        @unique // VCH-IN-001
+  type        VoucherType
+  status      VoucherStatus @default(DRAFT)
+  warehouseId String
+  warehouse   Warehouse     @relation(fields: [warehouseId], references: [id])
+  note        String?       @db.Text
+  reason      String?
+  createdBy   String
+  approvedBy  String?
+  postedAt    DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  items VoucherItem[]
+
+  @@index([warehouseId])
+  @@index([status])
+  @@index([type])
+  @@map("inventory_vouchers")
+}
+
+enum VoucherType {
+  RECEIPT
+  ISSUE
+  ADJUST
+}
+
+enum VoucherStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  POSTED
+  CANCELLED
+}
+
+model VoucherItem {
+  id        String           @id @default(cuid())
+  voucherId String
+  voucher   InventoryVoucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  variantId String
+  qty       Int
+  note      String?
+
+  @@index([voucherId])
+  @@map("voucher_items")
+}
+
+model InventoryLedger {
+  id          String     @id @default(cuid())
+  variantId   String
+  warehouseId String
+  warehouse   Warehouse  @relation(fields: [warehouseId], references: [id])
+  type        LedgerType
+  qty         Int        // positive = in, negative = out
+  balance     Int        // running balance after this entry
+  refType     String?    // "voucher", "order", "stocktake", "reserve"
+  refId       String?
+  note        String?
+  createdBy   String?
+  createdAt   DateTime   @default(now())
+
+  @@index([variantId, warehouseId])
+  @@index([createdAt])
+  @@map("inventory_ledger")
+}
+
+enum LedgerType {
+  RECEIPT
+  ISSUE
+  ADJUST
+  RESERVE
+  RELEASE
+  SHIP
+  RETURN_IN
+}
+
+model Stocktake {
+  id          String          @id @default(cuid())
+  warehouseId String
+  warehouse   Warehouse       @relation(fields: [warehouseId], references: [id])
+  status      StocktakeStatus @default(DRAFT)
+  note        String?
+  createdBy   String
+  completedAt DateTime?
+  createdAt   DateTime        @default(now())
+
+  items StocktakeItem[]
+
+  @@index([warehouseId])
+  @@map("stocktakes")
+}
+
+enum StocktakeStatus {
+  DRAFT
+  IN_PROGRESS
+  COMPLETED
+}
+
+model StocktakeItem {
+  id          String    @id @default(cuid())
+  stocktakeId String
+  stocktake   Stocktake @relation(fields: [stocktakeId], references: [id], onDelete: Cascade)
+  variantId   String
+  systemQty   Int
+  actualQty   Int?
+  diff        Int?      // actualQty - systemQty
+
+  @@index([stocktakeId])
+  @@map("stocktake_items")
+}

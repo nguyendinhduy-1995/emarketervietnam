@@ -268,9 +268,38 @@ export async function POST(req: NextRequest) {
         }
     }
 
+    // ─── Auto-Provision CRM tenant for PROVISION_TENANT products ────
+    let provisionedWorkspace: { id: string; slug: string } | null = null;
+    if (product.deliveryMethod === 'PROVISION_TENANT') {
+        try {
+            const slug = `smk-${userId.slice(-6)}-${Date.now().toString(36)}`;
+            const prov = await db.$transaction(async (tx) => {
+                const org = await tx.org.create({
+                    data: { name: `CRM — ${product.name}`, ownerUserId: userId, status: 'ACTIVE' },
+                });
+                const ws = await tx.workspace.create({
+                    data: { orgId: org.id, name: product.name, slug, product: 'OPTICAL', status: 'ACTIVE' },
+                });
+                await tx.membership.create({ data: { workspaceId: ws.id, userId, role: 'ADMIN' } });
+                await tx.emkAccount.create({
+                    data: {
+                        workspaceId: ws.id, plan: 'STARTER', status: 'ACTIVE',
+                        trialEndAt: new Date(Date.now() + 30 * 86400000),
+                    },
+                });
+                return ws;
+            });
+            provisionedWorkspace = { id: prov.id, slug: prov.slug };
+            console.log(`[Checkout] Provisioned CRM tenant: ${prov.slug}`);
+        } catch (err) {
+            console.error('[Checkout] CRM provision error:', err);
+        }
+    }
+
     return NextResponse.json({
         ok: true, order: result, message: `Mua "${product.name}" thành công!`,
         productType: product.type, deliveryMethod: product.deliveryMethod,
         charged: chargeAmount, discount: discountAmount,
+        ...(provisionedWorkspace ? { redirectUrl: `/smk-crm`, provision: provisionedWorkspace } : {}),
     }, { status: 201 });
 }
