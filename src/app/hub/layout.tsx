@@ -191,6 +191,12 @@ export default function HubLayout({ children }: { children: React.ReactNode }) {
                                         <Link href="/hub/account" onClick={() => setShowUserMenu(false)} style={{ display: 'block', padding: '10px 16px', fontSize: '13px', color: 'var(--text-primary)', textDecoration: 'none', transition: 'background 150ms' }} onMouseEnter={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.05)')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                                             👤 Tài khoản
                                         </Link>
+                                        <Link href="/hub/orders" onClick={() => setShowUserMenu(false)} style={{ display: 'block', padding: '10px 16px', fontSize: '13px', color: 'var(--text-primary)', textDecoration: 'none', transition: 'background 150ms' }} onMouseEnter={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.05)')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                                            📦 Đơn hàng
+                                        </Link>
+                                        <Link href="/hub/downloads" onClick={() => setShowUserMenu(false)} style={{ display: 'block', padding: '10px 16px', fontSize: '13px', color: 'var(--text-primary)', textDecoration: 'none', transition: 'background 150ms' }} onMouseEnter={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.05)')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                                            📥 Tải về
+                                        </Link>
                                         <Link href="/hub/settings" onClick={() => setShowUserMenu(false)} style={{ display: 'block', padding: '10px 16px', fontSize: '13px', color: 'var(--text-primary)', textDecoration: 'none', transition: 'background 150ms' }} onMouseEnter={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.05)')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                                             ⚙️ Cài đặt
                                         </Link>
