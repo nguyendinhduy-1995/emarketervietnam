@@ -5,23 +5,23 @@ export default function PricingPage() {
         <div className="container" style={{ padding: '60px 20px' }}>
             <div className="page-header" style={{ textAlign: 'center', marginBottom: '48px' }}>
                 <h1>Bảng giá minh bạch</h1>
-                <p>Miễn phí mãi mãi cho Core CRM. Mở rộng với Module khi bạn sẵn sàng.</p>
+                <p>Miễn phí mãi mãi cho CRM cơ bản. Mở rộng với giải pháp khi bạn sẵn sàng.</p>
             </div>
 
             <div className="grid grid-3" style={{ maxWidth: '1000px', margin: '0 auto', alignItems: 'start' }}>
                 {/* FREE */}
                 <div className="pricing-card">
-                    <h3 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-secondary)' }}>Free</h3>
+                    <h3 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-secondary)' }}>Miễn phí</h3>
                     <div className="price">0₫<span className="price-period">/tháng</span></div>
                     <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '24px' }}>
-                        Core CRM – đủ để bắt đầu
+                        CRM cơ bản – đủ để bắt đầu
                     </p>
                     <ul>
                         <li>Quản lý Khách hàng (không giới hạn)</li>
                         <li>Lịch hẹn cơ bản</li>
                         <li>Menu Dịch vụ</li>
                         <li>Phiếu thu cơ bản</li>
-                        <li>1 Workspace</li>
+                        <li>1 Không gian làm việc</li>
                     </ul>
                     <Link href="/signup" className="btn btn-secondary" style={{ width: '100%', marginTop: '16px' }}>
                         Bắt đầu miễn phí
@@ -42,17 +42,17 @@ export default function PricingPage() {
                     }}>
                         ⭐ PHỔ BIẾN NHẤT
                     </div>
-                    <h3 style={{ fontSize: '20px', fontWeight: 600 }}>Starter</h3>
-                    <div className="price">199K₫<span className="price-period">/module/tháng</span></div>
+                    <h3 style={{ fontSize: '20px', fontWeight: 600 }}>Khởi đầu</h3>
+                    <div className="price">199K₫<span className="price-period">/giải pháp/tháng</span></div>
                     <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '24px' }}>
-                        Chọn module bạn cần
+                        Chọn giải pháp bạn cần
                     </p>
                     <ul>
-                        <li>Tất cả tính năng Free</li>
-                        <li>Chọn module: Inbox, Automation, Booking...</li>
+                        <li>Tất cả tính năng gói Miễn phí</li>
+                        <li>Chọn giải pháp: Hộp thư, Tự động hoá, Đặt lịch...</li>
                         <li>Hỗ trợ ưu tiên</li>
                         <li>Báo cáo nâng cao</li>
-                        <li>Multi-user (3 người)</li>
+                        <li>Đa người dùng (3 người)</li>
                     </ul>
                     <Link href="/signup" className="btn btn-primary" style={{ width: '100%', marginTop: '16px' }}>
                         Dùng thử 14 ngày
@@ -61,17 +61,17 @@ export default function PricingPage() {
 
                 {/* PRO */}
                 <div className="pricing-card">
-                    <h3 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-secondary)' }}>Pro</h3>
+                    <h3 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-secondary)' }}>Chuyên nghiệp</h3>
                     <div className="price">699K₫<span className="price-period">/tháng</span></div>
                     <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '24px' }}>
-                        Tất cả module + AI
+                        Tất cả giải pháp + AI
                     </p>
                     <ul>
-                        <li>Tất cả tính năng Starter</li>
-                        <li>Tất cả module đã mở</li>
-                        <li>AI Suite (BYOK)</li>
-                        <li>API Access</li>
-                        <li>Không giới hạn user</li>
+                        <li>Tất cả tính năng gói Khởi đầu</li>
+                        <li>Tất cả giải pháp đã mở</li>
+                        <li>Bộ AI (dùng khoá riêng)</li>
+                        <li>Truy cập API</li>
+                        <li>Không giới hạn người dùng</li>
                         <li>Hỗ trợ 24/7</li>
                     </ul>
                     <Link href="/signup" className="btn btn-secondary" style={{ width: '100%', marginTop: '16px' }}>
@@ -82,26 +82,26 @@ export default function PricingPage() {
 
             {/* Module pricing */}
             <div style={{ maxWidth: '800px', margin: '60px auto 0', textAlign: 'center' }}>
-                <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '32px' }}>Giá từng Module</h2>
+                <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '32px' }}>Giá từng giải pháp</h2>
                 <div className="table-container">
                     <table>
                         <thead>
                             <tr>
-                                <th>Module</th>
+                                <th>Giải pháp</th>
                                 <th>Giá/tháng</th>
                                 <th>Mô tả</th>
                             </tr>
                         </thead>
                         <tbody>
                             {[
-                                { icon: '💬', name: 'Inbox', price: '199K₫', desc: 'Tin nhắn đa kênh' },
-                                { icon: '⚡', name: 'Automation', price: '299K₫', desc: 'Nhắc lịch, follow-up tự động' },
-                                { icon: '🎫', name: 'Membership', price: '149K₫', desc: 'Thẻ thành viên, tích điểm' },
-                                { icon: '📦', name: 'Inventory', price: '199K₫', desc: 'Quản lý tồn kho' },
-                                { icon: '💰', name: 'Commission', price: '149K₫', desc: 'Hoa hồng nhân viên' },
-                                { icon: '📅', name: 'Online Booking', price: '249K₫', desc: 'Đặt lịch online' },
-                                { icon: '📊', name: 'Analytics', price: '299K₫', desc: 'Báo cáo chi tiết' },
-                                { icon: '🤖', name: 'AI Suite', price: '499K₫', desc: 'Trợ lý AI, phân tích ảnh' },
+                                { icon: '💬', name: 'Hộp thư', price: '199K₫', desc: 'Tin nhắn đa kênh' },
+                                { icon: '⚡', name: 'Tự động hoá', price: '299K₫', desc: 'Nhắc lịch, theo dõi tự động' },
+                                { icon: '🎫', name: 'Thẻ thành viên', price: '149K₫', desc: 'Thẻ thành viên, tích điểm' },
+                                { icon: '📦', name: 'Kho hàng', price: '199K₫', desc: 'Quản lý tồn kho' },
+                                { icon: '💰', name: 'Hoa hồng', price: '149K₫', desc: 'Hoa hồng nhân viên' },
+                                { icon: '📅', name: 'Đặt lịch trực tuyến', price: '249K₫', desc: 'Đặt lịch trực tuyến' },
+                                { icon: '📊', name: 'Phân tích', price: '299K₫', desc: 'Báo cáo chi tiết' },
+                                { icon: '🤖', name: 'Bộ trợ lý AI', price: '499K₫', desc: 'Trợ lý AI, phân tích ảnh' },
                             ].map((m) => (
                                 <tr key={m.name}>
                                     <td><span style={{ marginRight: '8px' }}>{m.icon}</span>{m.name}</td>

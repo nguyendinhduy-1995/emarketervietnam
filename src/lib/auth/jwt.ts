@@ -27,6 +27,8 @@ export async function verifyToken(token: string): Promise<TokenPayload | null> {
     }
 }
 
+// ─── Hub Session (cookie: token) ────────────────────────────
+
 export async function getSession(): Promise<TokenPayload | null> {
     const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value;
@@ -48,4 +50,29 @@ export async function setSessionCookie(token: string) {
 export async function clearSessionCookie() {
     const cookieStore = await cookies();
     cookieStore.delete('token');
+}
+
+// ─── CRM Session (cookie: crm_token) ───────────────────────
+
+export async function getCrmSession(): Promise<TokenPayload | null> {
+    const cookieStore = await cookies();
+    const token = cookieStore.get('crm_token')?.value;
+    if (!token) return null;
+    return verifyToken(token);
+}
+
+export async function setCrmSessionCookie(token: string) {
+    const cookieStore = await cookies();
+    cookieStore.set('crm_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60,
+        path: '/',
+    });
+}
+
+export async function clearCrmSessionCookie() {
+    const cookieStore = await cookies();
+    cookieStore.delete('crm_token');
 }

@@ -7,11 +7,11 @@ import { generateUniqueSlug } from '@/lib/slug';
 import { enqueueProvisioningJob } from '@/lib/queue/provisioning';
 
 const signupSchema = z.object({
-    spaName: z.string().min(2).max(100),
-    email: z.string().email(),
+    workspaceName: z.string().min(2).max(100),
+    phone: z.string().min(9).max(15),
     password: z.string().min(6),
     name: z.string().min(2).max(100),
-    phone: z.string().optional(),
+    email: z.string().email().optional().or(z.literal('')),
 });
 
 export async function POST(req: NextRequest) {
@@ -19,19 +19,35 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const data = signupSchema.parse(body);
 
-        // Check if email already exists
+        // Normalize phone
+        const normalizedPhone = data.phone.replace(/[\s\-]/g, '');
+
+        // Check if phone already exists
         const existingUser = await platformDb.user.findUnique({
-            where: { email: data.email },
+            where: { phone: normalizedPhone },
         });
         if (existingUser) {
             return NextResponse.json(
-                { error: 'Email đã được sử dụng' },
+                { error: 'Số điện thoại đã được sử dụng' },
                 { status: 409 }
             );
         }
 
+        // Also check email if provided
+        if (data.email) {
+            const existingEmail = await platformDb.user.findUnique({
+                where: { email: data.email },
+            });
+            if (existingEmail) {
+                return NextResponse.json(
+                    { error: 'Email đã được sử dụng' },
+                    { status: 409 }
+                );
+            }
+        }
+
         // Generate unique slug
-        const slug = await generateUniqueSlug(data.spaName);
+        const slug = await generateUniqueSlug(data.workspaceName);
 
         // Hash password
         const passwordHash = await hashPassword(data.password);
@@ -41,17 +57,17 @@ export async function POST(req: NextRequest) {
             // 1. Create User
             const user = await tx.user.create({
                 data: {
-                    email: data.email,
+                    phone: normalizedPhone,
+                    email: data.email || null,
                     passwordHash,
                     name: data.name,
-                    phone: data.phone,
                 },
             });
 
             // 2. Create Org
             const org = await tx.org.create({
                 data: {
-                    name: data.spaName,
+                    name: data.workspaceName,
                     ownerUserId: user.id,
                 },
             });
@@ -60,7 +76,7 @@ export async function POST(req: NextRequest) {
             const workspace = await tx.workspace.create({
                 data: {
                     orgId: org.id,
-                    name: data.spaName,
+                    name: data.workspaceName,
                     slug,
                     product: 'SPA',
                 },
@@ -118,7 +134,7 @@ export async function POST(req: NextRequest) {
         // Generate JWT
         const token = await signToken({
             userId: result.user.id,
-            email: result.user.email,
+            email: result.user.email || result.user.phone,
             name: result.user.name,
         });
 
@@ -128,6 +144,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
             user: {
                 id: result.user.id,
+                phone: result.user.phone,
                 email: result.user.email,
                 name: result.user.name,
             },

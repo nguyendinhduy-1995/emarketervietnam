@@ -30,9 +30,9 @@ export default function HomePage() {
                         { icon: '👥', title: 'Quản lý Khách hàng', desc: 'Lưu trữ thông tin, lịch sử dịch vụ và phân loại khách hàng tự động.' },
                         { icon: '📅', title: 'Lịch hẹn thông minh', desc: 'Đặt lịch, nhắc hẹn tự động, chống trùng ca và quản lý lịch trực quan.' },
                         { icon: '💆', title: 'Dịch vụ & Nhân viên', desc: 'Quản lý menu dịch vụ, phân ca nhân viên, tính hoa hồng tự động.' },
-                        { icon: '🧾', title: 'Phiếu thu & Doanh thu', desc: 'Tạo phiếu thu nhanh, theo dõi công nợ, báo cáo doanh thu real-time.' },
-                        { icon: '📦', title: 'Marketplace Module', desc: 'Mở rộng CRM với Inbox, Automation, Booking, Analytics và AI Suite.' },
-                        { icon: '🔐', title: 'Bảo mật & Multi-tenant', desc: 'Mỗi Spa có không gian riêng, dữ liệu cách ly hoàn toàn, mã hóa AI key.' },
+                        { icon: '🧾', title: 'Phiếu thu & Doanh thu', desc: 'Tạo phiếu thu nhanh, theo dõi công nợ, báo cáo doanh thu tức thời.' },
+                        { icon: '📦', title: 'Kho giải pháp mở rộng', desc: 'Mở rộng CRM với Hộp thư, Tự động hoá, Đặt lịch, Phân tích và Trợ lý AI.' },
+                        { icon: '🔐', title: 'Bảo mật & Đa chi nhánh', desc: 'Mỗi Spa có không gian riêng, dữ liệu cách ly hoàn toàn, mã hoá khoá AI.' },
                     ].map((f, i) => (
                         <div key={i} className="card animate-in" style={{ animationDelay: `${0.1 * i}s` }}>
                             <div style={{ fontSize: '40px', marginBottom: '16px' }}>{f.icon}</div>
@@ -53,7 +53,7 @@ export default function HomePage() {
                     Sẵn sàng <span style={{ background: 'var(--accent-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>chuyển đổi số</span>?
                 </h2>
                 <p style={{ color: 'var(--text-secondary)', marginBottom: '32px', fontSize: '18px' }}>
-                    Miễn phí mãi mãi cho Core CRM. Nâng cấp bất cứ lúc nào.
+                    Miễn phí mãi mãi cho CRM cơ bản. Nâng cấp bất cứ lúc nào.
                 </p>
                 <Link href="/signup" className="btn btn-primary btn-lg">
                     Tạo CRM ngay – Miễn phí ✨
@@ -70,8 +70,8 @@ export default function HomePage() {
                 color: 'var(--text-muted)',
                 fontSize: '13px',
             }}>
-                <span>© 2026 eMarketer Vietnam. All rights reserved.</span>
-                <span>Built with ❤️ for Vietnamese Spas</span>
+                <span>© 2026 eMarketer Vietnam. Bảo lưu mọi quyền.</span>
+                <span>Xây dựng với ❤️ cho Spa Việt Nam</span>
             </footer>
         </>
     );

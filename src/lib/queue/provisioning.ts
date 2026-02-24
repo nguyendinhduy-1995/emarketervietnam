@@ -88,11 +88,11 @@ export function createProvisioningWorker() {
                 });
 
                 // 5. Audit log
-                await platformDb.auditLog.create({
+                await platformDb.eventLog.create({
                     data: {
                         workspaceId,
                         actorUserId: workspace.orgId, // system
-                        action: 'PROVISIONING_COMPLETE',
+                        type: 'PROVISIONING_COMPLETE',
                         payloadJson: { jobId },
                     },
                 });

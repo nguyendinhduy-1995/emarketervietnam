@@ -17,19 +17,31 @@ Nền tảng SaaS multi-tenant quản lý Spa & Salon. Khách hàng tự đăng 
 # 1. Install dependencies
 npm install
 
-# 2. Copy env
+# 2. Environment Variables
 cp .env.example .env
-# Edit .env with your database credentials
+# Required .env modifications:
+# DATABASE_URL="postgresql://user:pass@localhost:5432/hub_platform"
+# SPA_DATABASE_URL="postgresql://user:pass@localhost:5432/hub_spa"
+# REDIS_URL="redis://localhost:6379"
+# ENCRYPTION_KEY="32-byte-base64-string-here"
+# JWT_SECRET="your-secure-jwt-secret-here"
+# NEXT_PUBLIC_APP_URL="http://localhost:3000"
 
-# 3. Setup database + seed
+# 3. Setup Database & Seed Default Data
 npm run setup
 # This runs: prisma:generate → prisma:push → prisma:seed
 
-# 4. Start dev server
+# 4. Start Dev Server
 npm run dev
 
-# 5. Start workers (separate terminal)
+# 5. Start Background Workers (in a separate terminal)
 npm run worker
+
+# 6. Simulate Webhook Payment (Optional)
+# To simulate a successful QR code transfer for order EMK-123456:
+# curl -X POST http://localhost:3000/api/webhooks/dummybank \
+#   -H "Content-Type: application/json" \
+#   -d '{"txnRef": "TXN999", "amount": 500000, "description": "Payment for EMK-123456"}'
 ```
 
 ## Docker Deployment (Production)

@@ -12,18 +12,52 @@ datasource db {
 
 model User {
   id           String   @id @default(cuid())
-  email        String   @unique
+  email        String?  @unique
   passwordHash String
   name         String
-  phone        String?
-  status       String   @default("ACTIVE") // ACTIVE | DISABLED
-  isAdmin      Boolean  @default(false)     // platform super-admin
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  phone        String   @unique
+  status             String    @default("ACTIVE") // ACTIVE | DISABLED
+  isAdmin            Boolean   @default(false)     // platform super-admin
+  emkRole            String?   // ADMIN | OPS | SALES | CS (null = not eMarketer staff)
+  loginToken         String?   @unique
+  loginTokenExpiry   DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  ownedOrgs   Org[]
-  memberships Membership[]
-  auditLogs   AuditLog[]
+  ownedOrgs      Org[]
+  memberships    Membership[]
+  eventLogs      EventLog[]
+  errorLogs      ErrorLog[]
+  importJobs     ImportJob[]
+  setting        UserSetting?
+  emkLeadsOwned  EmkLead[]     @relation("LeadOwner")
+  emkTasksOwned  EmkTask[]     @relation("TaskOwner")
+  emkNotes       EmkNote[]     @relation("NoteAuthor")
+  wallet         Wallet?
+  supportTickets SupportTicket[]
+  ticketMessages TicketMessage[]
+  emailTemplates EmkEmailTemplate[] @relation("TemplateAuthor")
+  emkCampaigns   EmkDripCampaign[]  @relation("CampaignAuthor")
+  achievements   Achievement[]
+  kbArticles     KbArticle[]        @relation("KbAuthor")
+}
+
+model UserSetting {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  theme     String   @default("AUTO") // LIGHT, DARK, AUTO
+  // Notification preferences
+  notifBilling  Boolean @default(true)
+  notifTask     Boolean @default(true)
+  notifSystem   Boolean @default(true)
+  notifUpdate   Boolean @default(true)
+  notifPromo    Boolean @default(true)
+  digestMode    String  @default("INSTANT") // INSTANT, DAILY, WEEKLY
+  quietStart    String? // HH:mm format, e.g. "22:00"
+  quietEnd      String? // HH:mm format, e.g. "07:00"
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Org {
@@ -47,16 +81,20 @@ model Workspace {
 
   org              Org               @relation(fields: [orgId], references: [id])
   memberships      Membership[]
-  auditLogs        AuditLog[]
+  eventLogs        EventLog[]
+  errorLogs        ErrorLog[]
+  importJobs       ImportJob[]
   productInstances ProductInstance[]
   provisioningJobs ProvisioningJob[]
   entitlements     Entitlement[]
   subscriptions    Subscription[]
   upgradeOrders    UpgradeOrder[]
   paymentTxns      PaymentTxn[]
+  paymentProofs    PaymentProof[]
   reminderRules    ReminderRule[]
   reminderLogs     ReminderLog[]
   aiProviderKeys   AiProviderKey[]
+  emkAccount       EmkAccount?
 
   @@index([orgId])
 }
@@ -76,18 +114,61 @@ model Membership {
   @@index([userId])
 }
 
-model AuditLog {
+model EventLog {
   id          String   @id @default(cuid())
-  workspaceId String
-  actorUserId String
-  action      String
+  workspaceId String?
+  actorUserId String?
+  type        String
   payloadJson Json?
   createdAt   DateTime @default(now())
 
-  workspace Workspace @relation(fields: [workspaceId], references: [id])
-  actor     User      @relation(fields: [actorUserId], references: [id])
+  workspace Workspace? @relation(fields: [workspaceId], references: [id])
+  actor     User?      @relation(fields: [actorUserId], references: [id])
+
+  @@index([workspaceId, type, createdAt])
+}
+
+model ErrorLog {
+  id          String   @id @default(cuid())
+  workspaceId String?
+  userId      String?
+  path        String?
+  message     String
+  stack       String?
+  createdAt   DateTime @default(now())
+
+  workspace Workspace? @relation(fields: [workspaceId], references: [id])
+  user      User?      @relation(fields: [userId], references: [id])
 
   @@index([workspaceId, createdAt])
+}
+
+model ImportJob {
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String
+  status      String   @default("PENDING") // PENDING | PROCESSING | DONE | FAILED
+  totalRows   Int      @default(0)
+  successRows Int      @default(0)
+  failedRows  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace  Workspace   @relation(fields: [workspaceId], references: [id])
+  user       User        @relation(fields: [userId], references: [id])
+  importRows ImportRow[]
+
+  @@index([workspaceId, status])
+}
+
+model ImportRow {
+  id          String   @id @default(cuid())
+  jobId       String
+  rawJson     Json
+  status      String   @default("PENDING") // RUNNING, SUCCESS, FAILED
+  errorMsg    String?
+
+  job ImportJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
 }
 
 // ─── Provisioning ──────────────────────────────────────────
@@ -282,4 +363,442 @@ model HelpDoc {
   createdAt  DateTime @default(now())
 
   @@index([productKey, moduleKey])
+}
+
+// ─── Hub Marketplace Products ─────────────────────────────
+
+model Product {
+  id           String   @id @default(cuid())
+  key          String   @unique
+  slug         String   @unique
+  name         String
+  tagline      String?  // 1 dòng outcome
+  outcomeText  String?  // mô tả kết quả
+  industry     String[] // SPA, SALES, PERSONAL
+  icon         String?
+  priceMonthly Int      @default(0)
+  features     Json?    // [{text, included}]
+  faq          Json?    // [{q, a}]
+  isActive     Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model PaymentProof {
+  id          String   @id @default(cuid())
+  workspaceId String
+  orderId     String?
+  imageUrl    String
+  note        String?
+  status      String   @default("PENDING") // PENDING | APPROVED | REJECTED
+  reviewedBy  String?
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId, createdAt])
+  @@index([status])
+}
+
+// ─── eMarketer CRM (Internal Ops) ─────────────────────────
+
+model EmkLead {
+  id          String    @id @default(cuid())
+  name        String
+  phone       String?
+  email       String?
+  industry    String?   // SPA, SALES, PERSONAL
+  size        String?   // SOLO, SMALL, MEDIUM
+  need        String?
+  source      String?   // LP_SPA, LP_SALES, LP_SOLO, DIRECT, AFF
+  utmSource   String?
+  utmCampaign String?
+  utmMedium   String?
+  status      String    @default("NEW") // NEW|CONTACTED|ONBOARDING|ACTIVE|RENEWAL|AT_RISK|CHURNED|LOST
+  tags        String?   // Comma-separated tags, e.g. "VIP,HOT,NURTURE"
+  score       Int       @default(0)  // Lead score 0-100
+  ownerId     String?
+  workspaceId String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  owner    User?       @relation("LeadOwner", fields: [ownerId], references: [id])
+  tasks    EmkTask[]   @relation("LeadTasks")
+  notes    EmkNote[]   @relation("LeadNotes")
+  referral Referral?
+
+  @@index([status, createdAt])
+  @@index([ownerId, status])
+  @@index([phone])
+}
+
+model EmkAccount {
+  id             String    @id @default(cuid())
+  workspaceId    String    @unique
+  leadId         String?
+  plan           String    @default("TRIAL") // TRIAL | STARTER | PRO
+  trialStartAt   DateTime  @default(now())
+  trialEndAt     DateTime?
+  lastActivityAt DateTime?
+  status         String    @default("TRIAL") // TRIAL|ACTIVE|PAST_DUE|CHURNED
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  tasks     EmkTask[] @relation("AccountTasks")
+  notes     EmkNote[] @relation("AccountNotes")
+
+  @@index([status, trialEndAt])
+}
+
+model EmkTask {
+  id               String    @id @default(cuid())
+  title            String
+  type             String    @default("GENERAL") // CALL|DEMO|FOLLOW_UP|RENEWAL|GENERAL
+  ownerId          String?
+  relatedLeadId    String?
+  relatedAccountId String?
+  dueDate          DateTime?
+  status           String    @default("OPEN") // OPEN | DONE | CANCELLED
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  owner   User?       @relation("TaskOwner", fields: [ownerId], references: [id])
+  lead    EmkLead?    @relation("LeadTasks", fields: [relatedLeadId], references: [id])
+  account EmkAccount? @relation("AccountTasks", fields: [relatedAccountId], references: [id])
+
+  @@index([ownerId, dueDate])
+  @@index([status, dueDate])
+  @@index([relatedLeadId])
+}
+
+model EmkNote {
+  id        String   @id @default(cuid())
+  leadId    String?
+  accountId String?
+  authorId  String
+  content   String
+  createdAt DateTime @default(now())
+
+  lead    EmkLead?    @relation("LeadNotes", fields: [leadId], references: [id])
+  account EmkAccount? @relation("AccountNotes", fields: [accountId], references: [id])
+  author  User        @relation("NoteAuthor", fields: [authorId], references: [id])
+
+  @@index([leadId, createdAt])
+  @@index([accountId, createdAt])
+}
+
+// ─── Affiliate / Agency ───────────────────────────────────
+
+model AffiliateAccount {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?  @unique
+  phone     String?
+  status    String   @default("ACTIVE") // ACTIVE | SUSPENDED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  links       AffiliateLink[]
+  referrals   Referral[]
+  commissions Commission[]
+}
+
+model AffiliateLink {
+  id          String   @id @default(cuid())
+  affiliateId String
+  refCode     String   @unique
+  targetUrl   String?  // landing slug
+  clicks      Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  affiliate AffiliateAccount @relation(fields: [affiliateId], references: [id])
+
+  @@index([refCode])
+  @@index([affiliateId])
+}
+
+model Referral {
+  id          String   @id @default(cuid())
+  affiliateId String
+  leadId      String   @unique
+  refCode     String
+  clickedAt   DateTime
+  convertedAt DateTime?
+  status      String   @default("CLICKED") // CLICKED|LEAD|TRIAL|PAID
+  createdAt   DateTime @default(now())
+
+  affiliate AffiliateAccount @relation(fields: [affiliateId], references: [id])
+  lead      EmkLead          @relation(fields: [leadId], references: [id])
+
+  @@index([affiliateId, status, createdAt])
+}
+
+model Commission {
+  id          String    @id @default(cuid())
+  affiliateId String
+  referralId  String?
+  amount      Int       // VND
+  status      String    @default("PENDING") // PENDING|APPROVED|PAID|REJECTED
+  approvedAt  DateTime?
+  paidAt      DateTime?
+  payoutItemId String?
+  createdAt   DateTime  @default(now())
+
+  affiliate AffiliateAccount @relation(fields: [affiliateId], references: [id])
+
+  @@index([affiliateId, status, createdAt])
+}
+
+model PayoutBatch {
+  id        String   @id @default(cuid())
+  month     String   // "2026-02"
+  total     Int      @default(0) // VND
+  status    String   @default("DRAFT") // DRAFT|APPROVED|PAID
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items PayoutItem[]
+}
+
+model PayoutItem {
+  id          String   @id @default(cuid())
+  batchId     String
+  affiliateId String
+  amount      Int
+  status      String   @default("PENDING") // PENDING|PAID
+  proofUrl    String?
+  createdAt   DateTime @default(now())
+
+  batch PayoutBatch @relation(fields: [batchId], references: [id])
+
+  @@index([batchId])
+  @@index([affiliateId])
+}
+
+// ─── Wallet System ────────────────────────────────────────
+
+model Wallet {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  balanceAvailable Int      @default(0) // VND – cache, source of truth = WalletLedger
+  currency         String   @default("VND")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user   User           @relation(fields: [userId], references: [id])
+  ledger WalletLedger[]
+}
+
+model WalletLedger {
+  id              String   @id @default(cuid())
+  walletId        String
+  userId          String
+  type            String   // TOPUP | SPEND | REFUND | ADJUST
+  amount          Int      // >= 0
+  direction       String   // CREDIT | DEBIT
+  refType         String   // TOPUP_INTENT | TOPUP_CONFIRMED | PURCHASE | SUBSCRIPTION | MINIAPP_USAGE | MANUAL_ADJUST
+  refId           String   // id giao dịch liên quan
+  idempotencyKey  String   // unique per user, chống lặp
+  note            String?
+  metadata        Json?
+  createdAt       DateTime @default(now())
+
+  wallet Wallet @relation(fields: [walletId], references: [id])
+
+  @@unique([userId, idempotencyKey])
+  @@index([userId, createdAt])
+  @@index([refType, refId])
+}
+
+model TopupIntent {
+  id              String    @id @default(cuid())
+  userId          String
+  amount          Int       // >= 100000 VND
+  status          String    @default("PENDING") // PENDING | CONFIRMED | EXPIRED | CANCELED
+  payMethod       String    @default("BANK_QR")
+  bankAccountId   String?
+  transferContent String    @unique // EMK{userShort}-{idShort} – nội dung CK duy nhất
+  qrPayload       String?  // VietQR deeplink / data
+  qrImageUrl      String?
+  expiresAt       DateTime?
+  confirmedAt     DateTime?
+  createdAt       DateTime  @default(now())
+
+  @@index([userId, status, createdAt])
+  @@index([transferContent])
+}
+
+model BankAccount {
+  id            String   @id @default(cuid())
+  bankName      String
+  bankCode      String?  // VietQR bank code
+  bin           String?  // VietQR BIN
+  accountNumber String
+  accountName   String
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+}
+
+model Purchase {
+  id          String    @id @default(cuid())
+  userId      String
+  itemType    String    // PLAN | MINIAPP | FEATURE
+  itemId      String
+  amount      Int       // VND
+  status      String    @default("PENDING") // PENDING | PAID | FAILED | REFUNDED
+  createdAt   DateTime  @default(now())
+  paidAt      DateTime?
+
+  @@index([userId, createdAt])
+}
+
+model CmsPost {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  excerpt     String?
+  body        String   @db.Text
+  category    String   @default("Tin tức")    // Tin tức, Hướng dẫn, Cập nhật, Khuyến mãi
+  status      String   @default("DRAFT")      // DRAFT, PUBLISHED
+  authorId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status, createdAt])
+}
+
+// ─── Support Tickets ──────────────────────────────────────
+model SupportTicket {
+  id          String    @id @default(cuid())
+  workspaceId String?
+  userId      String
+  subject     String
+  category    String    @default("GENERAL") // GENERAL|BILLING|TECHNICAL|ACCOUNT
+  priority    String    @default("NORMAL")  // LOW|NORMAL|HIGH|URGENT
+  status      String    @default("OPEN")    // OPEN|IN_PROGRESS|RESOLVED|CLOSED
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user     User            @relation(fields: [userId], references: [id])
+  messages TicketMessage[]
+
+  @@index([userId, status])
+  @@index([status, createdAt])
+}
+
+model TicketMessage {
+  id        String   @id @default(cuid())
+  ticketId  String
+  authorId  String
+  content   String   @db.Text
+  isStaff   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  ticket SupportTicket @relation(fields: [ticketId], references: [id])
+  author User          @relation(fields: [authorId], references: [id])
+
+  @@index([ticketId, createdAt])
+}
+
+model EmkEmailTemplate {
+  id        String   @id @default(cuid())
+  name      String
+  subject   String
+  body      String   @db.Text
+  category  String   @default("GENERAL") // WELCOME|FOLLOW_UP|RENEWAL|PROMO|GENERAL
+  isActive  Boolean  @default(true)
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  author User? @relation("TemplateAuthor", fields: [createdBy], references: [id])
+
+  @@index([category, isActive])
+}
+
+// ─── Drip Campaigns ──────────────────────────────────────
+
+model EmkDripCampaign {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  triggerStatus String  @default("NEW")   // Pipeline status that triggers this campaign
+  stepsJson   Json     // Array of steps: [{delay: 0, subject, body, channel}]
+  isActive    Boolean  @default(true)
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  author User?          @relation("CampaignAuthor", fields: [createdBy], references: [id])
+  logs   EmkDripLog[]
+
+  @@index([triggerStatus, isActive])
+}
+
+model EmkDripLog {
+  id         String   @id @default(cuid())
+  campaignId String
+  leadId     String
+  stepIndex  Int
+  channel    String   @default("EMAIL")  // EMAIL | ZALO | SMS
+  status     String   @default("SENT")   // SENT | FAILED | SKIPPED
+  subject    String?
+  sentAt     DateTime @default(now())
+
+  campaign EmkDripCampaign @relation(fields: [campaignId], references: [id])
+
+  @@index([campaignId, leadId])
+  @@index([leadId, sentAt])
+}
+
+// ─── Gamification ─────────────────────────────────────────
+
+model Achievement {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // BADGE | STREAK | MILESTONE
+  key       String   // first_lead, fast_responder, streak_7, leads_100
+  label     String   // Display name
+  icon      String   @default("🏆")
+  earnedAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, key])
+  @@index([userId, earnedAt])
+}
+
+// ─── Knowledge Base ───────────────────────────────────────
+
+model KbCategory {
+  id       String  @id @default(cuid())
+  name     String
+  slug     String  @unique
+  icon     String  @default("📁")
+  sortOrder Int    @default(0)
+
+  articles KbArticle[]
+}
+
+model KbArticle {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  content     String   @db.Text
+  categoryId  String
+  authorId    String?
+  isPublished Boolean  @default(true)
+  viewCount   Int      @default(0)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  category KbCategory @relation(fields: [categoryId], references: [id])
+  author   User?      @relation("KbAuthor", fields: [authorId], references: [id])
+
+  @@index([categoryId, isPublished])
+  @@index([slug])
 }
