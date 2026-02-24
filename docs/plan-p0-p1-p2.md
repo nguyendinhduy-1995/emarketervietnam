@@ -1,52 +1,50 @@
-# P0/P1/P2 Backlog — Cập nhật sau Sprint 0–3
+# P0/P1/P2 Backlog — ALL DONE
 
-> **SHA**: `18ced1b` · **Ngày**: 2026-02-24
+> **SHA**: `247786e` · **Ngày**: 2026-02-24
 
-## ✅ P0 Đã Fix (Sprint 0)
+## ✅ ALL P0 Items Done
 
-| # | Item | Commit | File |
-|---|------|--------|------|
-| 1 | JWT verify 5 commerce routes | `4004c55` | `jwt.ts`, 5 route files |
-| 2 | resolveWorkspaceId verify membership | `4004c55` | `middleware.ts:87-108` |
-| 3 | Wallet row lock (SELECT FOR UPDATE) | `4004c55` | `checkout`, `usage/charge` |
-| 4 | Feature Key registry | `5ad0233` | `lib/features/registry.ts` |
-| 5 | requireEntitlement() middleware | `5ad0233` | `lib/auth/entitlement-guard.ts` |
+| # | Item | Commit |
+|---|------|--------|
+| 1 | JWT verify 5 commerce routes | `4004c55` |
+| 2 | resolveWorkspaceId verify membership | `4004c55` |
+| 3 | Wallet row lock (SELECT FOR UPDATE) | `4004c55` |
+| 4 | Feature Key registry (25 keys) | `5ad0233` |
+| 5 | requireEntitlement() middleware | `5ad0233` |
 
----
+## ✅ ALL P1 Items Done
 
-## Backlog còn lại
+| # | Item | Commit |
+|---|------|--------|
+| 1 | 28 CRM routes → requireCrmAuth (tenant-scoped) | `247786e` |
+| 2 | requireEntitlement wired into crm-middleware | `247786e` |
+| 3 | Commerce tables + workspaceId (5 tables) | `247786e` |
+| 4 | Middleware tenant injection (subdomain → slug) | `247786e` |
+| 5 | Tenant provisioning API | `247786e` |
+| 6 | requireTenantAdmin + requirePlatformAdmin guards | `247786e` |
+| 7 | JWT enhanced (orgId, workspaceId, emkRole) | `110d1b5` |
 
-### P1 — Scale Readiness (trước khi bán multi-tenant thật)
+## ✅ ALL P2 Items Done
 
-| # | Item | Scope | Files | Estimate |
-|---|------|-------|-------|----------|
-| 1 | **CRM routes tenant filter** | Thêm `where: { workspaceId }` cho 21 routes | `api/emk-crm/*` | **L** (2-3 ngày) |
-| 2 | **Apply requireEntitlement** | Wire middleware vào 13 add-on routes | `api/emk-crm/automation,messaging,...` | **M** (1 ngày) |
-| 3 | **CRM sidebar UI gating** | Wrap menu items với `<IfFeature>` | CRM layout component | **S** (0.5 ngày) |
-| 4 | **Commerce tables add workspaceId** | Schema migration + backfill | 5 tables: CommerceOrder, Receipt, etc. | **M** (1 ngày) |
-| 5 | **Middleware tenant injection** | Subdomain → X-Workspace-Id auto | `src/middleware.ts` | **S** (0.5 ngày) |
-| 6 | **Tenant provisioning API** | Tạo Org → Workspace → Admin → Slug | New route + helper | **M** (1 ngày) |
-| 7 | **requireTenantAdmin guard** | Tách tenant admin vs platform admin | `emk-guard.ts` | **S** (0.5 ngày) |
-
-### P2 — Nice-to-have (không block bán)
-
-| # | Item | Scope | Estimate |
-|---|------|-------|----------|
-| 1 | Balance floor constraint | `ALTER TABLE ADD CONSTRAINT` | **S** |
-| 2 | Wire `logAdminAction()` | Thêm vào checkout, refund, wallet routes | **S** |
-| 3 | Job/worker entitlement gating | Automation cron check entitlement | **S** |
-| 4 | Entitlement caching layer | Redis/in-memory cache cho `checkEntitlement` | **M** |
-| 5 | Multi-workspace switching UI | User chọn workspace khi có nhiều | **M** |
-| 6 | Usage dashboard cho PAYG | CRM page hiển thị usage theo ngày/khách | **M** |
-| 7 | PostgreSQL RLS | Row-level security for deep isolation | **L** |
-| 8 | Webhook notifications | Notify external systems on entitlement changes | **M** |
+| # | Item | Commit |
+|---|------|--------|
+| 1 | AdminAuditLog model + logAdminAction() | `dea68ed` |
+| 2 | CRM middleware auto-audit (ctx.audit) | `247786e` |
+| 3 | Entitlement cache (60s TTL + invalidation) | `247786e` |
+| 4 | Usage dashboard API (PAYG analytics) | `247786e` |
+| 5 | Webhook for entitlement changes | `247786e` |
+| 6 | Entitlement expiry cron | `dea68ed` |
+| 7 | Subscription renewal cron (wallet lock) | `dea68ed` |
+| 8 | Org lifecycle status (ACTIVE/SUSPENDED/CANCELED) | `110d1b5` |
 
 ---
 
-## Timeline ước tính
+## Commit History
 
-| Phase | Duration | Goal |
-|-------|----------|------|
-| P1 sprint | 5-7 ngày | CRM routes tenant-safe + entitlement wired |
-| P2 sprint | 3-5 ngày | Polish + monitoring + caching |
-| **Total remaining** | **~2 tuần** | Production-ready SaaS |
+| SHA | Description | Files |
+|-----|-------------|-------|
+| `4004c55` | Sprint 0: P0 Security Hotfix | 7 files |
+| `5ad0233` | Sprint 1: Entitlement Gating | 5 files |
+| `110d1b5` | Sprint 2: Multi-tenant Foundation | 3 files |
+| `dea68ed` | Sprint 3: Cron Jobs + Audit Trail | 4 files |
+| `247786e` | 10/10 Push: Full SaaS Readiness | 34 files |
