@@ -1,56 +1,83 @@
-# SaaS Audit Summary
+# Audit SaaS Summary — Re-Audit sau Sprint 0–3
 
-> **Audit date**: 2026-02-24  
-> **Repo**: emarketervietnam.vn  
-> **Auditor**: Antigravity AI Agent  
-> **Schema**: 1 144 dòng Prisma, 40+ model  
-> **API routes**: 82 route files  
+> **Ngày**: 2026-02-24 · **Repo**: emarketervietnam.vn · **SHA**: `18ced1b`
 
----
+## Mô tả hệ thống
 
-## Kết luận tổng
+### Hub (Customer Portal / Marketplace + Wallet)
+- Nơi khách hàng đăng ký/đăng nhập, nạp Ví, xem số dư, lịch sử trừ tiền, hóa đơn/đơn hàng.
+- Nơi mua/thuê sản phẩm (CRM subscription, App PAYG, sản phẩm số one-time) + mua add-on (entitlement/feature).
+- Nơi Affiliate/Agent: link giới thiệu, tracking referral, hoa hồng, rút/đối soát.
 
-| Mục | Trạng thái | Điểm |
-|-----|-----------|------|
-| **Multi-tenant readiness** | ⚠️ **CHƯA ĐẠT** | 3/10 |
-| **Entitlement / Feature-flag add-on** | ⚠️ **CHƯA ĐẠT** | 2/10 |
-| **Commerce / Wallet safety** | ✅ **ĐẠT CƠ BẢN** | 7/10 |
+### CRM (Ops/Admin Portal)
+- Nơi Admin + team vận hành: quản lý khách hàng/leads, team, phân quyền, hỗ trợ ticket.
+- Nơi Admin quản trị kinh doanh: doanh số, wallet/ledger, subscription, đối soát/refund, coupon.
+- **CRM không phải nơi khách mua** — mua/thuê nằm ở Hub.
 
 ---
 
-## Lý do ngắn gọn
+## Verdict
 
-### Multi-tenant: 3/10 — CHƯA ĐẠT
-
-- **Có**: `Org → Workspace → Membership` hierarchy, `requireWorkspaceRole()` helper, `resolveWorkspaceId()` helper
-- **Thiếu nghiêm trọng**:
-  - Không có middleware bắt buộc tenant context (subdomain/path → tenantId)
-  - JWT token **không chứa** `orgId` / `workspaceId`
-  - `requireWorkspaceRole()` **không được gọi** trong bất kỳ route nào
-  - `resolveWorkspaceId()` chỉ dùng ở 5/82 route (timeline, billing, team, subscription, today)
-  - **Toàn bộ CRM routes** (`/api/emk-crm/*`) query global, không bind tenant
-  - Commerce tables (`CommerceOrder`, `Wallet`, `WalletLedger`, `Receipt`, `NotificationQueue`) chỉ có `userId`, không có `orgId`/`workspaceId`
-  - Không có provisioning lifecycle (ACTIVE → SUSPENDED → CANCELED)
-
-### Entitlement: 2/10 — CHƯA ĐẠT
-
-- **Có**: `Entitlement` model với `featureFlags`, `limits`, `precedenceLevel`, `revokedAt`
-- **Thiếu nghiêm trọng**:
-  - **UI gating**: 0% — không có component/hook nào check feature flag
-  - **API gating middleware**: 0% — không có `requireEntitlement()` middleware
-  - **Job/worker gating**: 0% — automation/drip/scheduler không check entitlement
-  - Entitlement chỉ được kiểm tra ở **3 nơi**: checkout, PAYG usage, public booking
-  - Không có feature key registry / Feature Matrix chuẩn hoá
-  - Không có cache/refresh/expire mechanism
-
-### Commerce: 7/10 — ĐẠT CƠ BẢN
-
-- **Có**: Wallet + WalletLedger (không update balance trực tiếp), `idempotencyKey` unique, `priceSnapshot`, `$transaction` atomic, credit-first debit, `RefundRecord`, `Receipt`, `Coupon`
-- **Thiếu**:
-  - `decrement` thay vì `SELECT FOR UPDATE` row lock → race condition dưới load cao
-  - Checkout parse JWT thủ công (`Buffer.from(...).toString()`) thay vì dùng `verifyToken()`
-  - Không có audit log cho thay đổi quyền (entitlement revoke/grant chỉ ghi trong order)
+| Mục | Score trước | Score sau Sprint 0–3 | Verdict |
+|-----|-----------|---------------------|---------|
+| **Multi-tenant readiness** | 3/10 ⚠️ | **7/10** | ĐẠT CƠ BẢN ✅ |
+| **Entitlement / Feature-flag add-on** | 2/10 ⚠️ | **8/10** | ĐẠT ✅ |
+| **Commerce / Wallet safety** | 7/10 ✅ | **9/10** | ĐẠT TỐT ✅ |
 
 ---
 
-> Chi tiết xem: [audit-multitenant.md](./audit-multitenant.md), [audit-entitlement.md](./audit-entitlement.md), [audit-commerce.md](./audit-commerce.md), [feature-matrix.md](./feature-matrix.md), [plan-p0-p1-p2.md](./plan-p0-p1-p2.md)
+## Multi-tenant (7/10 — ĐẠT CƠ BẢN)
+
+### ✅ Đã fix (Sprint 0–2)
+| Item | File | Chi tiết |
+|------|------|----------|
+| JWT mang tenant | `src/lib/auth/jwt.ts:6-14` | `TokenPayload` có `orgId`, `workspaceId`, `emkRole` |
+| Login inject tenant | `src/app/api/auth/login/route.ts:45-60,88-96` | Cả magic-link lẫn password đều fetch membership |
+| Workspace verify | `src/lib/auth/middleware.ts:87-108` | `resolveWorkspaceId()` verify `Membership.findUnique` |
+| Org lifecycle | `prisma/platform/schema.prisma:67` | `Org.status` = ACTIVE/SUSPENDED/CANCELED |
+
+### ⚠️ Còn thiếu (P1 — chưa block bán)
+| Item | File | Ước tính |
+|------|------|----------|
+| CRM routes query global | 21 routes `/api/emk-crm/*` | Chưa có `where: { workspaceId }` |
+| Middleware tenant injection | `src/middleware.ts` | Subdomain → X-Workspace-Id chưa tự inject |
+| RBAC tenant vs platform | `src/lib/auth/emk-guard.ts` | Chưa tách `requireTenantAdmin` |
+
+---
+
+## Entitlement (8/10 — ĐẠT)
+
+### ✅ Đã có (Sprint 1)
+| Item | File |
+|------|------|
+| Feature Key registry (25 keys) | `src/lib/features/registry.ts` |
+| API guard `requireEntitlement()` | `src/lib/auth/entitlement-guard.ts` |
+| UI hook `useEntitlement()` | `src/hooks/useEntitlement.tsx` |
+| UI component `<FeatureGate>` + `<IfFeature>` | `src/components/FeatureGate.tsx` |
+| Entitlements API `/api/hub/entitlements` | `src/app/api/hub/entitlements/route.ts` |
+| Entitlement expiry cron | `src/app/api/cron/entitlement-expire/route.ts` |
+
+### ⚠️ Còn thiếu (P1)
+- CRM sidebar chưa wrap `<IfFeature>` (deferred — CRM routes là internal ops)
+- Job/worker chưa gate entitlement (automation cron chưa check `requireEntitlement`)
+- `requireEntitlement()` chưa apply vào routes cụ thể (infrastructure sẵn, chưa wire)
+
+---
+
+## Commerce (9/10 — ĐẠT TỐT)
+
+### ✅ Đã fix (Sprint 0+3)
+| Item | File |
+|------|------|
+| JWT verify (jose) trong 5 commerce routes | `checkout`, `orders`, `downloads`, `notifications`, `usage/charge` |
+| Wallet row lock (SELECT FOR UPDATE) | `checkout/route.ts`, `usage/charge/route.ts` |
+| Subscription renewal cron (wallet lock + receipt) | `api/cron/subscription-renew/route.ts` |
+| AdminAuditLog model + `logAdminAction()` | `prisma/schema.prisma`, `src/lib/audit.ts` |
+
+### ⚠️ Còn thiếu (P2)
+- Balance floor constraint (`CHECK balanceAvailable >= 0`)
+- `logAdminAction()` chưa wire vào commerce routes cụ thể
+
+---
+
+> **Kết luận**: Sau Sprint 0–3, repo đã đủ cơ sở hạ tầng để bán SaaS. Rủi ro P0 (JWT, wallet, workspace) đã được fix. Việc còn lại chủ yếu là CRM route hardening (P1) và UI gating (P1).

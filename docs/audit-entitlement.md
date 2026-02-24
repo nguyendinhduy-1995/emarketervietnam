@@ -1,95 +1,128 @@
-# Audit: Entitlement & Feature-flag Add-on
+# Audit Entitlement — Re-Audit sau Sprint 0–3
 
-## 1. Entitlement Model (schema.prisma:221-245)
+> **SHA**: `18ced1b` · **Ngày**: 2026-02-24
+
+## 1. Entitlement Model ✅
+
+**File**: `prisma/platform/schema.prisma` lines 218-247
 
 ```prisma
 model Entitlement {
-  id              String    @id @default(cuid())
-  workspaceId     String              // ✅ tenant-scoped
-  userId          String?             // ✅ user-scoped option
-  productId       String?             // ✅ links to product
-  moduleKey       String              // ✅ feature key
-  scope           String    @default("ORG")    // ORG | USER | TENANT
-  status          String    @default("ACTIVE") // ACTIVE | INACTIVE | REVOKED
-  precedenceLevel Int       @default(0)        // ✅ higher wins
-  featureFlags    Json?               // ✅ {"automation": true}
-  limits          Json?               // ✅ {"maxUsers": 10}
-  activeFrom      DateTime
-  activeTo        DateTime?           // ✅ expiry
-  revokedAt       DateTime?           // ✅ revoke
-  revokeReason    String?             // ✅ audit trail
+  id              String   @id @default(cuid())
+  workspaceId     String   // ← tenant scoped ✅
+  userId          String?
+  moduleKey       String   // ← maps to FeatureKey registry
+  productId       String?
+  scope           String   @default("WORKSPACE")
+  status          String   @default("ACTIVE")
+  featureFlags    Json?
+  limits          Json?
+  precedenceLevel Int      @default(0)
+  activeFrom      DateTime @default(now())
+  activeTo        DateTime?
+  revokedAt       DateTime?
+  grantedBy       String?
+  grantSource     String?
 }
 ```
 
-**Verdict**: Schema ĐẠT — model đầy đủ fields cần thiết.
+**Source of truth**: DB nội bộ (`platformDb.entitlement`)
 
-## 2. Source of Truth
+---
 
-| Question | Answer |
-|----------|--------|
-| Lưu ở đâu? | DB nội bộ (`platformDb.entitlement`) |
-| Hub API là source? | ❌ Checkout tạo trực tiếp, không qua Hub API |
-| Cache? | ❌ Không có cache layer (mỗi lần check = query DB) |
-| Refresh/expire? | ❌ Không có cron/scheduler check `activeTo` |
-| Revoke? | ✅ Partial — checkout refund revoke, nhưng không có admin UI |
+## 2. Feature Key Registry ✅ (Sprint 1)
 
-## 3. Nơi Entitlement Được Kiểm Tra (3/∞)
+**File**: `src/lib/features/registry.ts`
 
-| Nơi check | File | Logic |
-|-----------|------|-------|
-| PAYG Usage | `api/app/usage/charge/route.ts:35` | `db.entitlement.findFirst({ where: { userId, productId, status: 'ACTIVE' } })` |
-| Public Booking | `api/public/book/[spaSlug]/route.ts:28` | `db.entitlement.findFirst({ where: { workspaceId, moduleKey: 'ONLINE_BOOKING', status: 'ACTIVE' } })` |
-| CRM Account Detail | `api/emk-crm/accounts/[id]/route.ts:18` | Read-only: hiển thị entitlements trong account health |
+| Category | Keys | Count |
+|----------|------|-------|
+| Core (always on) | CORE_DASHBOARD, CORE_LEADS, CORE_TASKS, CORE_BILLING, CORE_MARKETPLACE, CORE_TEAM, CORE_SUPPORT | 7 |
+| AI Add-ons | AI_ASSISTANT, AI_ANALYTICS, AI_LEAD_SCORE, AI_CHURN, AI_GENERATE, AI_SUMMARY, AI_SETTINGS | 7 |
+| Automation | AUTOMATION, DRIP_CAMPAIGN | 2 |
+| Communication | MESSAGING, EMAIL_TEMPLATES | 2 |
+| Data & Content | DATA_EXPORT, ONLINE_BOOKING, CMS, DIGITAL_ASSETS | 4 |
+| Commerce | AFFILIATES, KNOWLEDGE_BASE, FINANCE_ADMIN | 3 |
+| **Total** | | **25** |
 
-## 4. Gating 3 lớp — CHƯA CÓ
+Includes: `FEATURE_TIER` (Core/Add-on/Admin), `FEATURE_DEPS` (dependency graph), `FEATURE_LABELS` (Vietnamese)
 
-### 4a. UI Gating: ❌ 0%
+---
 
-- Không có hook `useEntitlement()` hoặc `useFeatureFlag()`
-- Không có component `<FeatureGate>` hoặc `<PlanGate>`
-- Menu sidebar hiển thị toàn bộ (CRM + Hub) bất kể entitlement
-- Cần gate: Automation menu, AI features, Analytics advanced, drip campaigns, digital assets
+## 3. Gating — 3 Lớp
 
-### 4b. API Gating Middleware: ❌ 0%
+### Lớp 1: API Gating ✅ (Infrastructure sẵn)
 
-- Không có `requireEntitlement(moduleKey)` middleware
-- Không có interceptor/middleware tự động check trước route handler
-- Các route nên gate nhưng **KHÔNG** gate:
+**File**: `src/lib/auth/entitlement-guard.ts`
 
-| Route | ModuleKey cần gate | File |
-|-------|-------------------|------|
-| AI Chat | `AI_ASSISTANT` | `api/ai/chat/route.ts` |
-| AI Analytics | `AI_ANALYTICS` | `api/ai/analytics/route.ts` |
-| AI Lead Score | `AI_LEAD_SCORE` | `api/ai/lead-score/route.ts` |
-| AI Summary | `AI_SUMMARY` | `api/ai/summary/route.ts` |
-| AI Churn | `AI_CHURN` | `api/ai/churn/route.ts` |
-| AI Generate | `AI_GENERATE` | `api/ai/generate/route.ts` |
-| AI Settings | `AI_SETTINGS` | `api/ai/settings/route.ts` |
-| Automation | `AUTOMATION` | `api/emk-crm/automation/route.ts` |
-| Drip Campaign | `DRIP_CAMPAIGN` | `api/emk-crm/drip/route.ts` |
-| Messaging (SMS/Zalo) | `MESSAGING` | `api/emk-crm/messaging/route.ts` |
-| Export | `DATA_EXPORT` | `api/emk-crm/export/route.ts` |
-| CMS | `CMS` | `api/emk-crm/cms/route.ts` |
-| Digital Assets | `DIGITAL_ASSETS` | `api/emk-crm/digital-assets/route.ts` |
+```typescript
+// Guard: returns 403 + upgrade URL
+requireEntitlement(workspaceId, FeatureKey.AUTOMATION)
+// → { error: "Tính năng chưa kích hoạt", code: "FEATURE_DISABLED", upgradeUrl: "/hub/marketplace" }
 
-### 4c. Job/Worker Gating: ❌ 0%
+// Check-only (no response)
+checkEntitlement(workspaceId, moduleKey)
+// → { allowed: boolean, entitlement?: ... }
 
-- `EmkDripCampaign` scheduler: không check entitlement trước khi gửi
-- `ReminderRule` scheduler: không check
-- Không có worker/cron system hiện tại
+// Batch: get all entitlements for UI
+getWorkspaceEntitlements(workspaceId)
+```
 
-## 5. Feature Key Registry: ❌ CHƯA CÓ
+**Status**: ✅ Infrastructure sẵn. ⚠️ Chưa wire vào CRM routes cụ thể (CRM routes hiện là platform admin internal, không phải tenant-facing).
 
-Không có file constants/enum chuẩn hoá. Entitlement `moduleKey` được hardcode cục bộ:
-- `ONLINE_BOOKING` (public booking)
-- Product `key` (checkout — dùng product key làm moduleKey)
+### Lớp 2: UI Gating ✅ (Infrastructure sẵn)
 
-**Cần tạo**: file `src/lib/features/registry.ts` với enum Feature Keys thống nhất.
+**File**: `src/hooks/useEntitlement.tsx`
+```typescript
+const { hasFeature, getLimit, getFlag } = useEntitlement();
+hasFeature('AUTOMATION') // → boolean
+getLimit('AUTOMATION', 'maxRules') // → number | null
+```
 
-## 6. Kiến nghị
+**File**: `src/components/FeatureGate.tsx`
+```tsx
+<FeatureGate feature="AUTOMATION">
+  <AutomationPanel />
+</FeatureGate>
 
-1. **Tạo `requireEntitlement()` middleware** — check `moduleKey + workspaceId + status=ACTIVE + activeTo > now()`
-2. **Tạo `useEntitlement()` React hook** — fetch entitlements 1 lần, cache, dùng cho UI gating
-3. **Tạo `<FeatureGate moduleKey="...">` component** — bọc menu/page
-4. **Tạo Feature Key enum** — map tất cả moduleKey → product → price
-5. **Thêm cron job** kiểm tra `activeTo` expired → auto set `status = 'INACTIVE'`
+<IfFeature feature="MESSAGING">
+  <MessagingMenuItem />
+</IfFeature>
+```
+
+**API**: `GET /api/hub/entitlements` — returns feature map per workspace
+
+**Status**: ✅ Components sẵn. ⚠️ CRM sidebar chưa wrap (deferred to UI sprint).
+
+### Lớp 3: Job/Worker Gating ⚠️ (Chưa implement)
+
+- `api/cron/subscription-renew` và `api/cron/entitlement-expire`: system-level, không cần gate
+- Automation routes (`api/emk-crm/automation`): chưa check entitlement trước khi chạy rules
+- **Fix**: thêm `requireEntitlement(ws, FeatureKey.AUTOMATION)` ở đầu handler
+
+---
+
+## 4. Expire & Revoke ✅ (Sprint 3)
+
+**Entitlement Expire Cron**: `src/app/api/cron/entitlement-expire/route.ts`
+- Query: `WHERE status = 'ACTIVE' AND activeTo < now()`
+- Action: set `INACTIVE` + log `EventLog`
+- Protected by `CRON_SECRET` header
+
+**Subscription Renewal Cron**: `src/app/api/cron/subscription-renew/route.ts`
+- Charge wallet (row lock) → extend period
+- Or PAST_DUE + notify if insufficient balance
+
+---
+
+## 5. Nơi cần apply gating (P1)
+
+| Route | FeatureKey | Layer |
+|-------|-----------|-------|
+| `emk-crm/automation/route.ts` | AUTOMATION | API |
+| `emk-crm/messaging/route.ts` | MESSAGING | API |
+| `emk-crm/templates/route.ts` | EMAIL_TEMPLATES | API |
+| `emk-crm/export/route.ts` | DATA_EXPORT | API |
+| `emk-crm/digital-assets/route.ts` | DIGITAL_ASSETS | API |
+| `emk-crm/categories/route.ts` (CMS) | CMS | API |
+| AI routes (7) | AI_* | API |
+| CRM sidebar | All add-on features | UI |
