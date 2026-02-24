@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { platformDb as db } from '@/lib/db/platform';
 import crypto from 'crypto';
 
-// Hub Checkout: Product → Order → Wallet Debit → Entitlement
+// Hub Checkout: Product → Coupon → Order → Wallet Debit → Entitlement → Receipt → Notify
+// Supports: SUBSCRIPTION (CRM), ONE_TIME (DIGITAL), PAYG initial purchase (APP)
+// Hardened: idempotency, credit balance, coupon, receipt, notification, price snapshot
 export async function POST(req: NextRequest) {
     const { cookies } = req;
     const sessionToken = cookies.get('hub_session')?.value || cookies.get('emk_session')?.value;
@@ -18,8 +20,15 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { productId, planId, source } = body;
+    const { productId, planId, source, couponCode, idempotencyKey } = body;
     if (!productId) return NextResponse.json({ error: 'productId là bắt buộc' }, { status: 400 });
+
+    // Idempotency check
+    const idemKey = idempotencyKey || `checkout_${userId}_${productId}_${Date.now()}`;
+    if (idempotencyKey) {
+        const existing = await db.commerceOrder.findUnique({ where: { idempotencyKey: idemKey } });
+        if (existing) return NextResponse.json({ ok: true, order: existing, message: 'Đã xử lý trước đó' });
+    }
 
     // 1. Get product
     const product = await db.product.findUnique({
@@ -35,49 +44,104 @@ export async function POST(req: NextRequest) {
     if (product.billingModel === 'SUBSCRIPTION') totalAmount = product.priceRental || product.priceMonthly;
     else if (product.billingModel === 'ONE_TIME') totalAmount = product.priceSale || product.priceOriginal;
 
-    // 3. Check wallet
+    // 3. Apply coupon
+    let discountAmount = 0;
+    let couponId: string | null = null;
+    if (couponCode) {
+        const coupon = await db.coupon.findUnique({ where: { code: couponCode.toUpperCase() } });
+        if (!coupon || !coupon.isActive) return NextResponse.json({ error: 'Mã giảm giá không hợp lệ' }, { status: 400 });
+        if (coupon.expiresAt && new Date(coupon.expiresAt) < new Date()) return NextResponse.json({ error: 'Mã đã hết hạn' }, { status: 400 });
+        if (coupon.maxUses > 0 && coupon.usedCount >= coupon.maxUses) return NextResponse.json({ error: 'Mã đã hết lượt' }, { status: 400 });
+        if (totalAmount < coupon.minOrderAmount) return NextResponse.json({ error: `Đơn tối thiểu ${coupon.minOrderAmount.toLocaleString()}đ` }, { status: 400 });
+        if (coupon.productIds.length > 0 && !coupon.productIds.includes(productId)) return NextResponse.json({ error: 'Mã không áp dụng cho sản phẩm này' }, { status: 400 });
+
+        // Check if user already used this coupon
+        const alreadyUsed = await db.couponRedemption.findFirst({ where: { couponId: coupon.id, userId } });
+        if (alreadyUsed) return NextResponse.json({ error: 'Bạn đã sử dụng mã này' }, { status: 400 });
+
+        if (coupon.type === 'PERCENT') {
+            discountAmount = Math.floor(totalAmount * coupon.value / 100);
+            if (coupon.maxDiscount && discountAmount > coupon.maxDiscount) discountAmount = coupon.maxDiscount;
+        } else {
+            discountAmount = coupon.value;
+        }
+        if (discountAmount > totalAmount) discountAmount = totalAmount;
+        couponId = coupon.id;
+    }
+
+    const chargeAmount = totalAmount - discountAmount;
+
+    // 4. Check wallet (use credit first, then real balance)
     const wallet = await db.wallet.findUnique({ where: { userId } });
-    if (totalAmount > 0) {
+    if (chargeAmount > 0) {
         if (!wallet) return NextResponse.json({ error: 'Chưa có ví' }, { status: 400 });
-        if (wallet.balanceAvailable < totalAmount) {
+        if (wallet.status !== 'ACTIVE') return NextResponse.json({ error: 'Ví đang bị khoá' }, { status: 400 });
+        const totalBalance = wallet.balanceAvailable + wallet.creditBalance;
+        if (totalBalance < chargeAmount) {
             return NextResponse.json({
-                error: `Số dư không đủ. Cần ${totalAmount.toLocaleString()}đ, còn ${wallet.balanceAvailable.toLocaleString()}đ`,
-                code: 'INSUFFICIENT_BALANCE', required: totalAmount, balance: wallet.balanceAvailable,
+                error: `Số dư không đủ. Cần ${chargeAmount.toLocaleString()}đ, còn ${totalBalance.toLocaleString()}đ`,
+                code: 'INSUFFICIENT_BALANCE', required: chargeAmount, balance: totalBalance,
             }, { status: 400 });
         }
     }
 
-    // 4. Find workspace
+    // 5. Find workspace
     const membership = await db.membership.findFirst({ where: { userId } });
     const workspace = membership ? await db.workspace.findUnique({ where: { id: membership.workspaceId } }) : null;
     const orgId = workspace?.orgId || null;
 
-    // 5. Atomic transaction
-    const idempKey = `checkout_${userId}_${productId}_${Date.now()}`;
+    // 6. Atomic transaction
     const result = await db.$transaction(async (tx) => {
-        // Create order
+        // Create order with idempotency
         const order = await tx.commerceOrder.create({
             data: {
-                userId, orgId,
-                source: source || 'HUB', status: 'PAID', totalAmount,
-                items: { create: { productId, planId: planId || null, quantity: 1, unitPrice: totalAmount, lineTotal: totalAmount } },
+                userId, orgId, source: source || 'HUB', status: 'PAID',
+                totalAmount, discountAmount, couponId, idempotencyKey: idemKey,
+                items: {
+                    create: {
+                        productId, planId: planId || null, quantity: 1,
+                        unitPrice: totalAmount, lineTotal: chargeAmount,
+                        priceSnapshot: { unitPrice: totalAmount, billing: product.billingModel, version: 1 },
+                    },
+                },
             },
             include: { items: true },
         });
 
-        // Debit wallet
-        if (totalAmount > 0 && wallet) {
+        // Debit wallet (credit first, then real balance)
+        if (chargeAmount > 0 && wallet) {
+            let creditUsed = 0;
+            let realUsed = chargeAmount;
+
+            if (wallet.creditBalance > 0) {
+                creditUsed = Math.min(wallet.creditBalance, chargeAmount);
+                realUsed = chargeAmount - creditUsed;
+            }
+
             await tx.wallet.update({
                 where: { id: wallet.id },
-                data: { balanceAvailable: { decrement: totalAmount } },
-            });
-            await tx.walletLedger.create({
                 data: {
-                    walletId: wallet.id, userId, type: 'SPEND', amount: totalAmount,
-                    direction: 'DEBIT', refType: 'PURCHASE', refId: order.id,
-                    idempotencyKey: idempKey, note: `Mua ${product.name}`,
+                    balanceAvailable: { decrement: realUsed },
+                    creditBalance: { decrement: creditUsed },
                 },
             });
+
+            await tx.walletLedger.create({
+                data: {
+                    walletId: wallet.id, userId, type: 'SPEND', amount: chargeAmount,
+                    direction: 'DEBIT', refType: 'PURCHASE', refId: order.id,
+                    idempotencyKey: idemKey, note: `Mua ${product.name}${creditUsed > 0 ? ` (credit: ${creditUsed.toLocaleString()}đ)` : ''}`,
+                    metadata: { creditUsed, realUsed, discount: discountAmount },
+                },
+            });
+        }
+
+        // Coupon redemption
+        if (couponId) {
+            await tx.couponRedemption.create({
+                data: { couponId, userId, orderId: order.id, discount: discountAmount },
+            });
+            await tx.coupon.update({ where: { id: couponId }, data: { usedCount: { increment: 1 } } });
         }
 
         // Entitlement
@@ -91,22 +155,67 @@ export async function POST(req: NextRequest) {
             });
         }
 
-        // Subscription
+        // Subscription with trial
         if (product.billingModel === 'SUBSCRIPTION' && workspace) {
-            const endDate = new Date(); endDate.setMonth(endDate.getMonth() + 1);
+            const plan = planId ? await tx.plan.findUnique({ where: { id: planId } }) : null;
+            const trialDays = plan?.trialDays || 0;
+            const endDate = new Date();
+            endDate.setMonth(endDate.getMonth() + 1);
+
             await tx.subscription.create({
                 data: {
                     workspaceId: workspace.id, userId, productId, planId: planId || null,
-                    planKey: product.key, status: 'ACTIVE', currentPeriodEnd: endDate,
+                    planKey: product.key,
+                    status: trialDays > 0 ? 'TRIAL' : 'ACTIVE',
+                    trialEndsAt: trialDays > 0 ? new Date(Date.now() + trialDays * 86400000) : null,
+                    currentPeriodEnd: endDate,
                 },
             });
         }
 
-        // Download grants (DIGITAL)
+        // Download grants with license key (DIGITAL)
         if (product.type === 'DIGITAL' && product.digitalAssets.length > 0) {
             for (const asset of product.digitalAssets) {
+                const licenseKey = `EMK-${crypto.randomBytes(4).toString('hex').toUpperCase()}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
                 await tx.downloadGrant.create({
-                    data: { userId, productId, orderId: order.id, assetId: asset.id, maxDownloads: 5 },
+                    data: { userId, productId, orderId: order.id, assetId: asset.id, maxDownloads: 5, licenseKey },
+                });
+            }
+        }
+
+        // Receipt
+        const receiptNo = `EMK-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
+        await tx.receipt.create({
+            data: {
+                userId, orderId: order.id, type: 'PURCHASE', amount: chargeAmount,
+                description: `Mua ${product.name}${discountAmount > 0 ? ` (giảm ${discountAmount.toLocaleString()}đ)` : ''}`,
+                receiptNo,
+            },
+        });
+
+        // Notification
+        await tx.notificationQueue.create({
+            data: {
+                userId, type: 'ENTITLEMENT_GRANTED',
+                title: `Mua "${product.name}" thành công!`,
+                body: `Bạn đã mua ${product.name} với giá ${chargeAmount.toLocaleString()}đ.${product.type === 'DIGITAL' ? ' Vào Tài khoản > Tải về để tải file.' : ''}`,
+                referenceType: 'ORDER', referenceId: order.id,
+            },
+        });
+
+        // Affiliate commission (if applicable)
+        if (orgId) {
+            const referral = await tx.referral.findFirst({
+                where: { lead: { workspaceId: workspace?.id } },
+            });
+            if (referral) {
+                const holdDate = new Date(); holdDate.setDate(holdDate.getDate() + 14); // 14-day hold
+                await tx.commission.create({
+                    data: {
+                        affiliateId: referral.affiliateId, referralId: referral.id,
+                        orderId: order.id, productId, amount: Math.floor(chargeAmount * 0.1),
+                        rate: 1000, status: 'HELD', holdUntil: holdDate,
+                    },
                 });
             }
         }
@@ -117,5 +226,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
         ok: true, order: result, message: `Mua "${product.name}" thành công!`,
         productType: product.type, deliveryMethod: product.deliveryMethod,
+        charged: chargeAmount, discount: discountAmount,
     }, { status: 201 });
 }

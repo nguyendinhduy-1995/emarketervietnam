@@ -219,40 +219,51 @@ model Module {
 }
 
 model Entitlement {
-  id          String    @id @default(cuid())
-  workspaceId String
-  userId      String?
-  productId   String?
-  moduleKey   String
-  scope       String    @default("ORG")   // ORG | USER | TENANT
-  status      String    @default("ACTIVE") // ACTIVE | INACTIVE | REVOKED
-  activeFrom  DateTime  @default(now())
-  activeTo    DateTime?
-  meta        Json?     // {tenantId, featureFlags, limits}
-  createdAt   DateTime  @default(now())
+  id              String    @id @default(cuid())
+  workspaceId     String
+  userId          String?
+  productId       String?
+  moduleKey       String
+  scope           String    @default("ORG")   // ORG | USER | TENANT
+  status          String    @default("ACTIVE") // ACTIVE | INACTIVE | REVOKED
+  precedenceLevel Int       @default(0)  // higher wins: manual > addon > plan
+  featureFlags    Json?     // {"automation": true, "aiWriter": true}
+  limits          Json?     // {"maxUsers": 10, "maxStorage": 5000}
+  activeFrom      DateTime  @default(now())
+  activeTo        DateTime?
+  revokedAt       DateTime?
+  revokeReason    String?
+  meta            Json?     // {tenantId, orderId, productType}
+  createdAt       DateTime  @default(now())
 
   workspace Workspace @relation(fields: [workspaceId], references: [id])
 
   @@index([workspaceId, moduleKey])
   @@index([workspaceId, createdAt])
   @@index([userId, productId])
+  @@index([status, activeTo])
 }
 
 model Plan {
-  id         String   @id @default(cuid())
-  key        String   @unique
-  productId  String?
-  name       String
-  price      Int      @default(0)        // VND
-  cycle      String   @default("MONTHLY") // MONTHLY | YEARLY | ONE_TIME
-  features   Json?    // [{text, included}]
-  limits     Json?    // {maxUsers, maxStorage, ...}
-  isActive   Boolean  @default(true)
-  limitsJson Json?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt @default(now())
+  id            String    @id @default(cuid())
+  key           String    @unique
+  productId     String?
+  name          String
+  price         Int       @default(0)        // VND
+  cycle         String    @default("MONTHLY") // MONTHLY | YEARLY | ONE_TIME
+  trialDays     Int       @default(0)        // trial period days
+  features      Json?     // [{text, included}]
+  limits        Json?     // {maxUsers, maxStorage, ...}
+  isActive      Boolean   @default(true)
+  version       Int       @default(1)
+  effectiveFrom DateTime  @default(now())
+  effectiveTo   DateTime?
+  limitsJson    Json?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt @default(now())
 
   @@index([productId, isActive])
+  @@index([productId, effectiveFrom])
 }
 
 model Subscription {
@@ -263,9 +274,12 @@ model Subscription {
   planId             String?
   planKey            String
   status             String    @default("TRIAL") // TRIAL | ACTIVE | PAST_DUE | SUSPENDED | CANCELED | EXPIRED
+  trialEndsAt        DateTime?
   currentPeriodStart DateTime  @default(now())
   currentPeriodEnd   DateTime?
   graceUntil         DateTime?
+  canceledAt         DateTime?
+  cancelReason       String?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
@@ -275,6 +289,7 @@ model Subscription {
   @@index([workspaceId])
   @@index([userId, productId])
   @@index([status, currentPeriodEnd])
+  @@index([trialEndsAt])
 }
 
 // ─── Billing ───────────────────────────────────────────────
@@ -433,18 +448,22 @@ model Product {
 // ─── Commerce Layer ──────────────────────────────────────
 
 model MeteredItem {
-  id         String   @id @default(cuid())
-  productId  String
-  key        String   // IMAGE_GEN, AI_WRITE, SMS
-  unitName   String   @default("lượt")  // lượt, tin, ảnh
-  unitPrice  Int      @default(0)       // VND per unit
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
+  id            String    @id @default(cuid())
+  productId     String
+  key           String   // IMAGE_GEN, AI_WRITE, SMS
+  unitName      String   @default("lượt")  // lượt, tin, ảnh
+  unitPrice     Int      @default(0)       // VND per unit
+  version       Int      @default(1)
+  effectiveFrom DateTime @default(now())
+  effectiveTo   DateTime?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
 
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([productId, key])
   @@index([productId, isActive])
+  @@index([productId, effectiveFrom])
 }
 
 // Plan linked to Product (junction for N:M if needed)
@@ -459,19 +478,24 @@ model Plan_Product {
 }
 
 model CommerceOrder {
-  id          String    @id @default(cuid())
-  userId      String
-  orgId       String?
-  source      String    @default("HUB") // HUB | CRM_REDIRECT
-  status      String    @default("PENDING") // PENDING | PAID | FAILED | REFUNDED
-  totalAmount Int       @default(0)
-  currency    String    @default("VND")
-  note        String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id              String    @id @default(cuid())
+  userId          String
+  orgId           String?
+  source          String    @default("HUB") // HUB | CRM_REDIRECT
+  status          String    @default("PENDING") // PENDING | PAID | FAILED | REFUNDED | PARTIAL_REFUND
+  totalAmount     Int       @default(0)
+  refundedAmount  Int       @default(0)
+  discountAmount  Int       @default(0)
+  couponId        String?
+  currency        String    @default("VND")
+  idempotencyKey  String?   @unique
+  note            String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   items      OrderItem[]
   grants     DownloadGrant[]
+  refunds    RefundRecord[]
 
   @@index([userId, createdAt])
   @@index([orgId, createdAt])
@@ -479,14 +503,15 @@ model CommerceOrder {
 }
 
 model OrderItem {
-  id         String @id @default(cuid())
-  orderId    String
-  productId  String
-  planId     String?
-  quantity   Int    @default(1)
-  unitPrice  Int    @default(0)
-  lineTotal  Int    @default(0)
-  meta       Json?  // {cycle, duration, ...}
+  id            String @id @default(cuid())
+  orderId       String
+  productId     String
+  planId        String?
+  quantity      Int    @default(1)
+  unitPrice     Int    @default(0)
+  lineTotal     Int    @default(0)
+  priceSnapshot Json?  // {unitPrice, cycle, version} at time of purchase
+  meta          Json?  // {cycle, duration, ...}
 
   order CommerceOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
@@ -540,7 +565,10 @@ model DownloadGrant {
   assetId       String
   maxDownloads  Int       @default(5)
   downloadCount Int       @default(0)
+  licenseKey    String?   @unique  // user-bound license
   expiresAt     DateTime?
+  revokedAt     DateTime?
+  revokeReason  String?
   createdAt     DateTime  @default(now())
 
   asset DigitalAsset  @relation(fields: [assetId], references: [id])
@@ -549,6 +577,7 @@ model DownloadGrant {
 
   @@index([userId, productId])
   @@index([orderId])
+  @@index([licenseKey])
 }
 
 model DownloadLog {
@@ -561,6 +590,126 @@ model DownloadLog {
   grant DownloadGrant @relation(fields: [grantId], references: [id])
 
   @@index([grantId])
+}
+
+// ─── Refund & Reverse ────────────────────────────────────
+
+model RefundRecord {
+  id            String   @id @default(cuid())
+  orderId       String
+  userId        String
+  amount        Int      // refund amount in VND
+  type          String   @default("FULL") // FULL | PARTIAL | CHARGEBACK
+  reason        String
+  status        String   @default("PENDING") // PENDING | APPROVED | PROCESSED | REJECTED
+  processedBy   String?  // admin userId who processed
+  processedAt   DateTime?
+  idempotencyKey String  @unique
+  metadata      Json?
+  createdAt     DateTime @default(now())
+
+  order CommerceOrder @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@index([userId, createdAt])
+  @@index([status])
+}
+
+// ─── Coupon / Promo ──────────────────────────────────────
+
+model Coupon {
+  id             String    @id @default(cuid())
+  code           String    @unique
+  type           String    @default("PERCENT") // PERCENT | FIXED
+  value          Int       // percent (1-100) or fixed VND amount
+  minOrderAmount Int       @default(0)
+  maxDiscount    Int?      // cap for PERCENT type
+  maxUses        Int       @default(0) // 0 = unlimited
+  usedCount      Int       @default(0)
+  productIds     String[]  // restrict to specific products (empty = all)
+  planIds        String[]  // restrict to specific plans
+  startsAt       DateTime  @default(now())
+  expiresAt      DateTime?
+  isActive       Boolean   @default(true)
+  createdBy      String?
+  createdAt      DateTime  @default(now())
+
+  redemptions CouponRedemption[]
+
+  @@index([code, isActive])
+  @@index([expiresAt])
+}
+
+model CouponRedemption {
+  id        String   @id @default(cuid())
+  couponId  String
+  userId    String
+  orderId   String?
+  discount  Int      @default(0)  // actual discount applied
+  createdAt DateTime @default(now())
+
+  coupon Coupon @relation(fields: [couponId], references: [id])
+
+  @@unique([couponId, userId, orderId])
+  @@index([userId])
+}
+
+// ─── PAYG Quota & Rate Limiting ──────────────────────────
+
+model UsageQuota {
+  id           String   @id @default(cuid())
+  userId       String
+  productId    String
+  itemKey      String
+  quotaLimit   Int      @default(0)   // max units per period (0=unlimited)
+  quotaUsed    Int      @default(0)
+  periodType   String   @default("MONTHLY") // DAILY | MONTHLY
+  periodStart  DateTime @default(now())
+  periodEnd    DateTime
+  rateLimit    Int      @default(60)  // max requests per minute
+  lastUsedAt   DateTime?
+  createdAt    DateTime @default(now())
+
+  @@unique([userId, productId, itemKey, periodStart])
+  @@index([userId, productId, periodEnd])
+}
+
+// ─── Receipt / Invoice ───────────────────────────────────
+
+model Receipt {
+  id          String   @id @default(cuid())
+  userId      String
+  orderId     String?
+  topupId     String?
+  type        String   @default("PURCHASE") // PURCHASE | TOPUP | REFUND | SUBSCRIPTION
+  amount      Int      @default(0)
+  description String
+  receiptNo   String   @unique  // auto-generated EMK-YYYY-MMDD-XXXX
+  metadata    Json?    // extra display data
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([type])
+}
+
+// ─── Notification Queue ──────────────────────────────────
+
+model NotificationQueue {
+  id          String    @id @default(cuid())
+  userId      String
+  type        String    // LOW_BALANCE | CHARGE_FAIL | SUB_EXPIRING | ENTITLEMENT_GRANTED | DOWNLOAD_READY | REFUND_PROCESSED
+  channel     String    @default("IN_APP") // IN_APP | EMAIL | SMS | PUSH
+  title       String
+  body        String
+  referenceType String? // ORDER | USAGE_EVENT | SUBSCRIPTION | DOWNLOAD_GRANT
+  referenceId   String?
+  status      String    @default("PENDING") // PENDING | SENT | READ | FAILED
+  sentAt      DateTime?
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId, status, createdAt])
+  @@index([type, status])
 }
 
 model PaymentProof {
@@ -717,16 +866,24 @@ model Commission {
   id          String    @id @default(cuid())
   affiliateId String
   referralId  String?
+  orderId     String?   // commerce order that triggered this
+  productId   String?   // product that was purchased
   amount      Int       // VND
-  status      String    @default("PENDING") // PENDING|APPROVED|PAID|REJECTED
+  rate        Int?      // commission rate in basis points (e.g. 1000 = 10%)
+  status      String    @default("PENDING") // PENDING|HELD|APPROVED|PAID|REJECTED|REVERSED
+  holdUntil   DateTime? // hold period before approval
   approvedAt  DateTime?
   paidAt      DateTime?
+  reversedAt  DateTime?
+  reverseReason String?
   payoutItemId String?
   createdAt   DateTime  @default(now())
 
   affiliate AffiliateAccount @relation(fields: [affiliateId], references: [id])
 
   @@index([affiliateId, status, createdAt])
+  @@index([orderId])
+  @@index([holdUntil, status])
 }
 
 model PayoutBatch {
@@ -761,13 +918,17 @@ model PayoutItem {
 model Wallet {
   id               String   @id @default(cuid())
   userId           String   @unique
-  balanceAvailable Int      @default(0) // VND – cache, source of truth = WalletLedger
+  balanceAvailable Int      @default(0) // VND – tiền thật
+  creditBalance    Int      @default(0) // VND – tiền khuyến mãi (không rút được)
+  status           String   @default("ACTIVE") // ACTIVE | LOCKED | FROZEN
   currency         String   @default("VND")
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
   user   User           @relation(fields: [userId], references: [id])
   ledger WalletLedger[]
+
+  @@index([status])
 }
 
 model WalletLedger {

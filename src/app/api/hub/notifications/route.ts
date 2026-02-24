@@ -1,111 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth/jwt';
-import { platformDb } from '@/lib/db/platform';
+import { platformDb as db } from '@/lib/db/platform';
 
+// GET — user's notifications
 export async function GET(req: NextRequest) {
-    const session = await getSession();
-    if (!session) {
-        return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
-    }
+    const { cookies } = req;
+    const sessionToken = cookies.get('hub_session')?.value || cookies.get('emk_session')?.value;
+    if (!sessionToken) return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
 
-    const wsId = req.cookies.get('workspaceId')?.value;
-    const notifications: Array<{
-        id: string;
-        type: string;
-        icon: string;
-        title: string;
-        desc: string;
-        time: Date;
-        read: boolean;
-    }> = [];
+    let userId: string;
+    try {
+        const payload = JSON.parse(Buffer.from(sessionToken.split('.')[1] || '', 'base64').toString());
+        userId = payload.userId;
+        if (!userId) throw new Error();
+    } catch { return NextResponse.json({ error: 'Token không hợp lệ' }, { status: 401 }); }
 
-    // 1. Nhắc nhở subscription sắp hết hạn
-    if (wsId) {
-        const reminders = await platformDb.reminderLog.findMany({
-            where: { workspaceId: wsId, status: 'PENDING' },
-            orderBy: { createdAt: 'desc' },
-            take: 5,
-            include: { subscription: { select: { id: true, status: true } } },
-        });
-        for (const r of reminders) {
-            notifications.push({
-                id: `reminder-${r.id}`,
-                type: 'reminder',
-                icon: '🔔',
-                title: r.offsetDay < 0
-                    ? `Gói dịch vụ sẽ hết hạn trong ${Math.abs(r.offsetDay)} ngày`
-                    : `Gói dịch vụ đã quá hạn ${r.offsetDay} ngày`,
-                desc: `Kênh: ${r.channel}`,
-                time: r.createdAt,
-                read: r.status === 'SENT',
-            });
-        }
-    }
+    const { searchParams } = new URL(req.url);
+    const status = searchParams.get('status');
 
-    // 2. Công việc quá hạn
-    const overdueTasks = await platformDb.emkTask.findMany({
-        where: {
-            ownerId: session.userId,
-            status: 'OPEN',
-            dueDate: { lt: new Date() },
-        },
-        orderBy: { dueDate: 'asc' },
-        take: 5,
+    const notifs = await db.notificationQueue.findMany({
+        where: { userId, ...(status ? { status } : {}) },
+        orderBy: { createdAt: 'desc' }, take: 50,
     });
-    for (const t of overdueTasks) {
-        const daysOverdue = Math.ceil(
-            (Date.now() - (t.dueDate?.getTime() || Date.now())) / (1000 * 60 * 60 * 24)
-        );
-        notifications.push({
-            id: `task-${t.id}`,
-            type: 'task',
-            icon: '⚠️',
-            title: `Công việc quá hạn: ${t.title}`,
-            desc: `Quá hạn ${daysOverdue} ngày`,
-            time: t.dueDate || t.createdAt,
-            read: false,
-        });
-    }
 
-    // 3. Hoạt động gần đây (EventLog)
-    const recentEvents = await platformDb.eventLog.findMany({
-        where: wsId ? { workspaceId: wsId } : {},
-        orderBy: { createdAt: 'desc' },
-        take: 5,
-        include: { actor: { select: { name: true } } },
-    });
-    for (const e of recentEvents) {
-        notifications.push({
-            id: `event-${e.id}`,
-            type: 'event',
-            icon: '📋',
-            title: formatEventType(e.type),
-            desc: e.actor?.name || 'Hệ thống',
-            time: e.createdAt,
-            read: true,
-        });
-    }
+    const unread = await db.notificationQueue.count({ where: { userId, status: { not: 'READ' } } });
 
-    // Sắp xếp theo thời gian
-    notifications.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
-
-    const unreadCount = notifications.filter(n => !n.read).length;
-
-    return NextResponse.json({
-        notifications: notifications.slice(0, 15),
-        unreadCount,
-    });
+    return NextResponse.json({ notifications: notifs, unreadCount: unread });
 }
 
-function formatEventType(type: string): string {
-    const MAP: Record<string, string> = {
-        'login': 'Đăng nhập hệ thống',
-        'signup': 'Đăng ký tài khoản',
-        'create_task': 'Tạo công việc mới',
-        'import': 'Nhập dữ liệu',
-        'payment': 'Thanh toán',
-        'subscription_created': 'Đăng ký gói dịch vụ',
-        'workspace_created': 'Tạo không gian làm việc',
-    };
-    return MAP[type] || type.replace(/_/g, ' ');
+// PATCH — mark as read
+export async function PATCH(req: NextRequest) {
+    const { cookies } = req;
+    const sessionToken = cookies.get('hub_session')?.value || cookies.get('emk_session')?.value;
+    if (!sessionToken) return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
+
+    let userId: string;
+    try {
+        const payload = JSON.parse(Buffer.from(sessionToken.split('.')[1] || '', 'base64').toString());
+        userId = payload.userId;
+        if (!userId) throw new Error();
+    } catch { return NextResponse.json({ error: 'Token không hợp lệ' }, { status: 401 }); }
+
+    const { id, markAllRead } = await req.json();
+
+    if (markAllRead) {
+        await db.notificationQueue.updateMany({
+            where: { userId, status: { not: 'READ' } },
+            data: { status: 'READ', readAt: new Date() },
+        });
+    } else if (id) {
+        await db.notificationQueue.update({
+            where: { id },
+            data: { status: 'READ', readAt: new Date() },
+        });
+    }
+
+    return NextResponse.json({ ok: true });
 }
