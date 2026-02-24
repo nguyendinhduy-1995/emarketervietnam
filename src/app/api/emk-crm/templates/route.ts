@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireEmkRole } from '@/lib/auth/emk-guard';
+import { requireCrmAuth } from '@/lib/auth/crm-middleware';
 import { platformDb } from '@/lib/db/platform';
 
 const DEFAULT_TEMPLATES = [
@@ -31,7 +31,7 @@ const DEFAULT_TEMPLATES = [
 
 // GET – List templates (defaults + DB)
 export async function GET(req: NextRequest) {
-    const auth = await requireEmkRole(req);
+    const auth = await requireCrmAuth(req);
     if (auth instanceof NextResponse) return auth;
 
     const url = new URL(req.url);
@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
 
 // POST – Create template
 export async function POST(req: NextRequest) {
-    const auth = await requireEmkRole(req);
+    const auth = await requireCrmAuth(req);
     if (auth instanceof NextResponse) return auth;
 
     const body = await req.json();
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
 
 // PATCH – Update template
 export async function PATCH(req: NextRequest) {
-    const auth = await requireEmkRole(req);
+    const auth = await requireCrmAuth(req);
     if (auth instanceof NextResponse) return auth;
 
     const body = await req.json();
@@ -94,7 +94,7 @@ export async function PATCH(req: NextRequest) {
 
 // DELETE – Delete template
 export async function DELETE(req: NextRequest) {
-    const auth = await requireEmkRole(req);
+    const auth = await requireCrmAuth(req);
     if (auth instanceof NextResponse) return auth;
 
     const url = new URL(req.url);

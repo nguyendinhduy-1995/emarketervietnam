@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { platformDb as db } from '@/lib/db/platform';
-import { requireEmkRole } from '@/lib/auth/emk-guard';
+import { requireCrmAuth } from '@/lib/auth/crm-middleware';
 
 function slugify(text: string): string {
     return text
@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
 
 // POST — create product
 export async function POST(req: NextRequest) {
-    const auth = await requireEmkRole(req, ['ADMIN']);
+    const auth = await requireCrmAuth(req, { allowedRoles: ['ADMIN'] });
     if (auth instanceof NextResponse) return auth;
 
     const body = await req.json();
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
 
 // PATCH — update product
 export async function PATCH(req: NextRequest) {
-    const auth = await requireEmkRole(req, ['ADMIN']);
+    const auth = await requireCrmAuth(req, { allowedRoles: ['ADMIN'] });
     if (auth instanceof NextResponse) return auth;
 
     const body = await req.json();
@@ -113,7 +113,7 @@ export async function PATCH(req: NextRequest) {
 
 // DELETE — delete product (cascade deletes meteredItems, digitalAssets, plans)
 export async function DELETE(req: NextRequest) {
-    const auth = await requireEmkRole(req, ['ADMIN']);
+    const auth = await requireCrmAuth(req, { allowedRoles: ['ADMIN'] });
     if (auth instanceof NextResponse) return auth;
 
     const { searchParams } = new URL(req.url);

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireEmkRole } from '@/lib/auth/emk-guard';
+import { requireCrmAuth } from '@/lib/auth/crm-middleware';
 import { platformDb } from '@/lib/db/platform';
 
 // GET – CRM Dashboard Analytics: funnel, velocity, revenue, team
 export async function GET(req: NextRequest) {
-    const auth = await requireEmkRole(req);
+    const auth = await requireCrmAuth(req);
     if (auth instanceof NextResponse) return auth;
 
     const now = new Date();

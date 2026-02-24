@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { platformDb } from '@/lib/db/platform';
-import { requireEmkRole } from '@/lib/auth/emk-guard';
+import { requireCrmAuth } from '@/lib/auth/crm-middleware';
 import { hashPassword } from '@/lib/auth/password';
 
 async function logEvent(actorUserId: string, type: string, detail: string) {
@@ -11,7 +11,7 @@ async function logEvent(actorUserId: string, type: string, detail: string) {
 
 // GET /api/emk-crm/users — list all platform users with activity
 export async function GET(req: NextRequest) {
-    const auth = await requireEmkRole(req, ['ADMIN']);
+    const auth = await requireCrmAuth(req, { allowedRoles: ['ADMIN'] });
     if (auth instanceof NextResponse) return auth;
 
     const { searchParams } = new URL(req.url);
@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
 
 // POST /api/emk-crm/users — create user or update user
 export async function POST(req: NextRequest) {
-    const auth = await requireEmkRole(req, ['ADMIN']);
+    const auth = await requireCrmAuth(req, { allowedRoles: ['ADMIN'] });
     if (auth instanceof NextResponse) return auth;
 
     const body = await req.json();

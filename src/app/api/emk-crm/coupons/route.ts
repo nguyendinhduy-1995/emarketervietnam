@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { platformDb as db } from '@/lib/db/platform';
-import { requireEmkRole } from '@/lib/auth/emk-guard';
+import { requireCrmAuth } from '@/lib/auth/crm-middleware';
 
 // GET — list coupons
 export async function GET() {
@@ -13,7 +13,7 @@ export async function GET() {
 
 // POST — create coupon
 export async function POST(req: NextRequest) {
-    const auth = await requireEmkRole(req, ['ADMIN']);
+    const auth = await requireCrmAuth(req, { allowedRoles: ['ADMIN'] });
     if (auth instanceof NextResponse) return auth;
 
     const { code, type, value, minOrderAmount, maxDiscount, maxUses, productIds, planIds, startsAt, expiresAt } = await req.json();
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 
 // PATCH — update coupon
 export async function PATCH(req: NextRequest) {
-    const auth = await requireEmkRole(req, ['ADMIN']);
+    const auth = await requireCrmAuth(req, { allowedRoles: ['ADMIN'] });
     if (auth instanceof NextResponse) return auth;
 
     const { id, ...updates } = await req.json();
@@ -50,7 +50,7 @@ export async function PATCH(req: NextRequest) {
 
 // DELETE — deactivate coupon
 export async function DELETE(req: NextRequest) {
-    const auth = await requireEmkRole(req, ['ADMIN']);
+    const auth = await requireCrmAuth(req, { allowedRoles: ['ADMIN'] });
     if (auth instanceof NextResponse) return auth;
 
     const id = new URL(req.url).searchParams.get('id');

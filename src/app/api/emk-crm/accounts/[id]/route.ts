@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireEmkRole } from '@/lib/auth/emk-guard';
+import { requireCrmAuth } from '@/lib/auth/crm-middleware';
 import { platformDb } from '@/lib/db/platform';
 
 // GET /api/emk-crm/accounts/[id] – Account detail with workspace, billing, modules
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-    const auth = await requireEmkRole(req);
+    const auth = await requireCrmAuth(req);
     if (auth instanceof NextResponse) return auth;
 
     const { id } = await params;
@@ -63,7 +63,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
 // PATCH /api/emk-crm/accounts/[id] – Update plan, status, trial extension
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-    const auth = await requireEmkRole(req, ['ADMIN', 'OPS']);
+    const auth = await requireCrmAuth(req, { allowedRoles: ['ADMIN', 'OPS'] });
     if (auth instanceof NextResponse) return auth;
 
     const { id } = await params;

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireEmkRole } from '@/lib/auth/emk-guard';
+import { requireCrmAuth } from '@/lib/auth/crm-middleware';
 import { platformDb } from '@/lib/db/platform';
 import { hashPassword } from '@/lib/auth/password';
 
@@ -11,7 +11,7 @@ async function logEvent(actorUserId: string, type: string, detail: string) {
 
 // GET — list Hub users (non-admin, non-staff)
 export async function GET(req: NextRequest) {
-    const auth = await requireEmkRole(req);
+    const auth = await requireCrmAuth(req);
     if (auth instanceof NextResponse) return auth;
 
     const users = await platformDb.user.findMany({
@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
 
 // POST — full admin actions on Hub users
 export async function POST(req: NextRequest) {
-    const auth = await requireEmkRole(req);
+    const auth = await requireCrmAuth(req);
     if (auth instanceof NextResponse) return auth;
 
     const body = await req.json();

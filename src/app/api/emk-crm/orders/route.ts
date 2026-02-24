@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { platformDb as db } from '@/lib/db/platform';
-import { requireEmkRole } from '@/lib/auth/emk-guard';
+import { requireCrmAuth } from '@/lib/auth/crm-middleware';
 
 // GET — list orders
 export async function GET(req: NextRequest) {
-    const auth = await requireEmkRole(req);
+    const auth = await requireCrmAuth(req);
     if (auth instanceof NextResponse) return auth;
 
     const { searchParams } = new URL(req.url);

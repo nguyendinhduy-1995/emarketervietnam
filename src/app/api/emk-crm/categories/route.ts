@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { platformDb as db } from '@/lib/db/platform';
-import { requireEmkRole } from '@/lib/auth/emk-guard';
+import { requireCrmAuth } from '@/lib/auth/crm-middleware';
 
 function slugify(text: string): string {
     return text
@@ -21,7 +21,7 @@ export async function GET() {
 
 // POST — create category
 export async function POST(req: NextRequest) {
-    const auth = await requireEmkRole(req, ['ADMIN']);
+    const auth = await requireCrmAuth(req, { allowedRoles: ['ADMIN'] });
     if (auth instanceof NextResponse) return auth;
 
     const { name, icon } = await req.json();
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
 
 // PATCH — update category
 export async function PATCH(req: NextRequest) {
-    const auth = await requireEmkRole(req, ['ADMIN']);
+    const auth = await requireCrmAuth(req, { allowedRoles: ['ADMIN'] });
     if (auth instanceof NextResponse) return auth;
 
     const { id, name, icon, sortOrder } = await req.json();
@@ -56,7 +56,7 @@ export async function PATCH(req: NextRequest) {
 
 // DELETE — delete category
 export async function DELETE(req: NextRequest) {
-    const auth = await requireEmkRole(req, ['ADMIN']);
+    const auth = await requireCrmAuth(req, { allowedRoles: ['ADMIN'] });
     if (auth instanceof NextResponse) return auth;
 
     const { searchParams } = new URL(req.url);

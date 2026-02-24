@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireEmkRole } from '@/lib/auth/emk-guard';
+import { requireCrmAuth } from '@/lib/auth/crm-middleware';
 import { platformDb } from '@/lib/db/platform';
 
 // GET – Danh sách đợt chi trả
 export async function GET(req: NextRequest) {
-    const auth = await requireEmkRole(req);
+    const auth = await requireCrmAuth(req);
     if (auth instanceof NextResponse) return auth;
 
     const batches = await platformDb.payoutBatch.findMany({
@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
 
 // POST – Tạo đợt chi trả mới từ hoa hồng đã duyệt
 export async function POST(req: NextRequest) {
-    const auth = await requireEmkRole(req, ['ADMIN']);
+    const auth = await requireCrmAuth(req, { allowedRoles: ['ADMIN'] });
     if (auth instanceof NextResponse) return auth;
 
     const body = await req.json();
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
 
 // PUT – Cập nhật trạng thái đợt chi trả
 export async function PUT(req: NextRequest) {
-    const auth = await requireEmkRole(req, ['ADMIN']);
+    const auth = await requireCrmAuth(req, { allowedRoles: ['ADMIN'] });
     if (auth instanceof NextResponse) return auth;
 
     const body = await req.json();

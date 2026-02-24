@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import { requireEmkRole } from '@/lib/auth/emk-guard';
+import { requireCrmAuth } from '@/lib/auth/crm-middleware';
 import { platformDb } from '@/lib/db/platform';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -15,7 +15,7 @@ interface DripStep {
 
 // ═══════ GET — List all drip campaigns ═══════
 export async function GET(req: NextRequest) {
-    const auth = await requireEmkRole(req);
+    const auth = await requireCrmAuth(req);
     if (auth instanceof NextResponse) return auth;
 
     const campaigns = await platformDb.emkDripCampaign.findMany({
@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
 
 // ═══════ POST — Create campaign OR Execute drip ═══════
 export async function POST(req: NextRequest) {
-    const auth = await requireEmkRole(req);
+    const auth = await requireCrmAuth(req);
     if (auth instanceof NextResponse) return auth;
 
     const body = await req.json();
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
 
 // ═══════ PUT — Toggle campaign active/inactive ═══════
 export async function PUT(req: NextRequest) {
-    const auth = await requireEmkRole(req);
+    const auth = await requireCrmAuth(req);
     if (auth instanceof NextResponse) return auth;
 
     const { id, isActive } = await req.json();
@@ -96,7 +96,7 @@ export async function PUT(req: NextRequest) {
 
 // ═══════ DELETE — Remove campaign ═══════
 export async function DELETE(req: NextRequest) {
-    const auth = await requireEmkRole(req);
+    const auth = await requireCrmAuth(req);
     if (auth instanceof NextResponse) return auth;
 
     const { id } = await req.json();

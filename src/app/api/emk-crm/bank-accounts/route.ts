@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireEmkRole } from '@/lib/auth/emk-guard';
+import { requireCrmAuth } from '@/lib/auth/crm-middleware';
 import { platformDb } from '@/lib/db/platform';
 
 // GET – Danh sách tài khoản ngân hàng
 export async function GET(req: NextRequest) {
-    const auth = await requireEmkRole(req);
+    const auth = await requireCrmAuth(req);
     if (auth instanceof NextResponse) return auth;
 
     const accounts = await platformDb.bankAccount.findMany({
@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
 
 // POST – Thêm tài khoản ngân hàng mới
 export async function POST(req: NextRequest) {
-    const auth = await requireEmkRole(req);
+    const auth = await requireCrmAuth(req);
     if (auth instanceof NextResponse) return auth;
 
     const { bankName, bankCode, bin, accountNumber, accountName } = await req.json();
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
 
 // PATCH – Cập nhật hoặc kích hoạt tài khoản
 export async function PATCH(req: NextRequest) {
-    const auth = await requireEmkRole(req);
+    const auth = await requireCrmAuth(req);
     if (auth instanceof NextResponse) return auth;
 
     const { id, bankName, bankCode, bin, accountNumber, accountName, isActive } = await req.json();
@@ -97,7 +97,7 @@ export async function PATCH(req: NextRequest) {
 
 // DELETE – Xoá tài khoản
 export async function DELETE(req: NextRequest) {
-    const auth = await requireEmkRole(req);
+    const auth = await requireCrmAuth(req);
     if (auth instanceof NextResponse) return auth;
 
     const { id } = await req.json();

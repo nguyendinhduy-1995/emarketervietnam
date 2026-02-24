@@ -85,5 +85,20 @@ export function middleware(req: NextRequest) {
         return NextResponse.rewrite(url);
     }
 
+    // ─── Tenant Subdomain Injection ─────────────────────────────
+    // Pattern: <slug>.emarketervietnam.vn → inject X-Workspace-Slug header
+    // The slug will be resolved to workspaceId by the route handler via Prisma
+    const baseDomain = process.env.NODE_ENV === 'production' ? 'emarketervietnam.vn' : 'localhost';
+    const hostParts = baseHostname.split('.');
+    if (hostParts.length > 1 || (process.env.NODE_ENV !== 'production' && baseHostname !== 'localhost')) {
+        const potentialSlug = hostParts[0];
+        if (potentialSlug && potentialSlug !== 'www' && potentialSlug !== 'crmspa' && potentialSlug !== baseDomain) {
+            // Inject tenant slug header for downstream resolution
+            const response = NextResponse.next();
+            response.headers.set('x-tenant-slug', potentialSlug);
+            return response;
+        }
+    }
+
     return NextResponse.next();
 }

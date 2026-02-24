@@ -482,6 +482,7 @@ model CommerceOrder {
   id              String    @id @default(cuid())
   userId          String
   orgId           String?
+  workspaceId     String?   // tenant scope
   source          String    @default("HUB") // HUB | CRM_REDIRECT
   status          String    @default("PENDING") // PENDING | PAID | FAILED | REFUNDED | PARTIAL_REFUND
   totalAmount     Int       @default(0)
@@ -500,6 +501,7 @@ model CommerceOrder {
 
   @@index([userId, createdAt])
   @@index([orgId, createdAt])
+  @@index([workspaceId, createdAt])
   @@index([status])
 }
 
@@ -599,6 +601,7 @@ model RefundRecord {
   id            String   @id @default(cuid())
   orderId       String
   userId        String
+  workspaceId   String?  // tenant scope
   amount        Int      // refund amount in VND
   type          String   @default("FULL") // FULL | PARTIAL | CHARGEBACK
   reason        String
@@ -613,6 +616,7 @@ model RefundRecord {
 
   @@index([orderId])
   @@index([userId, createdAt])
+  @@index([workspaceId, createdAt])
   @@index([status])
 }
 
@@ -660,6 +664,7 @@ model CouponRedemption {
 model UsageQuota {
   id           String   @id @default(cuid())
   userId       String
+  workspaceId  String?  // tenant scope
   productId    String
   itemKey      String
   quotaLimit   Int      @default(0)   // max units per period (0=unlimited)
@@ -673,6 +678,7 @@ model UsageQuota {
 
   @@unique([userId, productId, itemKey, periodStart])
   @@index([userId, productId, periodEnd])
+  @@index([workspaceId])
 }
 
 // ─── Receipt / Invoice ───────────────────────────────────
@@ -680,6 +686,7 @@ model UsageQuota {
 model Receipt {
   id          String   @id @default(cuid())
   userId      String
+  workspaceId String?  // tenant scope
   orderId     String?
   topupId     String?
   type        String   @default("PURCHASE") // PURCHASE | TOPUP | REFUND | SUBSCRIPTION
@@ -690,6 +697,7 @@ model Receipt {
   createdAt   DateTime @default(now())
 
   @@index([userId, createdAt])
+  @@index([workspaceId, createdAt])
   @@index([type])
 }
 
@@ -698,6 +706,7 @@ model Receipt {
 model NotificationQueue {
   id          String    @id @default(cuid())
   userId      String
+  workspaceId String?   // tenant scope
   type        String    // LOW_BALANCE | CHARGE_FAIL | SUB_EXPIRING | ENTITLEMENT_GRANTED | DOWNLOAD_READY | REFUND_PROCESSED
   channel     String    @default("IN_APP") // IN_APP | EMAIL | SMS | PUSH
   title       String
@@ -710,6 +719,7 @@ model NotificationQueue {
   createdAt   DateTime  @default(now())
 
   @@index([userId, status, createdAt])
+  @@index([workspaceId, createdAt])
   @@index([type, status])
 }
 

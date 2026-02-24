@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireEmkRole } from '@/lib/auth/emk-guard';
+import { requireCrmAuth } from '@/lib/auth/crm-middleware';
 import { platformDb } from '@/lib/db/platform';
 
 // GET – Admin: xem tất cả topup intents
 export async function GET(req: NextRequest) {
-    const auth = await requireEmkRole(req);
+    const auth = await requireCrmAuth(req);
     if (auth instanceof NextResponse) return auth;
 
     const topups = await platformDb.topupIntent.findMany({
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
 
 // POST – Admin: manual adjust (credit or debit)
 export async function POST(req: NextRequest) {
-    const auth = await requireEmkRole(req);
+    const auth = await requireCrmAuth(req);
     if (auth instanceof NextResponse) return auth;
 
     const { userId, amount, direction, reason } = await req.json();
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
 
 // PATCH – Admin: xác nhận thủ công 1 topup intent (khi webhook không tự xác nhận)
 export async function PATCH(req: NextRequest) {
-    const auth = await requireEmkRole(req);
+    const auth = await requireCrmAuth(req);
     if (auth instanceof NextResponse) return auth;
 
     const { intentId } = await req.json();

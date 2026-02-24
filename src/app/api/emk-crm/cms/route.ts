@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { platformDb } from '@/lib/db/platform';
-import { requireEmkRole } from '@/lib/auth/emk-guard';
+import { requireCrmAuth } from '@/lib/auth/crm-middleware';
 
 // GET /api/emk-crm/cms — list all posts (readable by any authenticated user)
 export async function GET(req: NextRequest) {
     // Try auth but don't block on failure - listing posts is safe
-    const auth = await requireEmkRole(req);
+    const auth = await requireCrmAuth(req);
     if (auth instanceof NextResponse) {
         // If not authorized as emk staff, still try to return posts for display
         // (the CMS page itself may need adjustment, but data should load)
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
 
 // POST /api/emk-crm/cms — create or update a post
 export async function POST(req: NextRequest) {
-    const auth = await requireEmkRole(req);
+    const auth = await requireCrmAuth(req);
     if (auth instanceof NextResponse) return auth;
 
     const body = await req.json();
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
 
 // DELETE /api/emk-crm/cms — delete a post
 export async function DELETE(req: NextRequest) {
-    const auth = await requireEmkRole(req, ['ADMIN']);
+    const auth = await requireCrmAuth(req, { allowedRoles: ['ADMIN'] });
     if (auth instanceof NextResponse) return auth;
 
     const { searchParams } = new URL(req.url);

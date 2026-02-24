@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireEmkRole } from '@/lib/auth/emk-guard';
+import { requireCrmAuth } from '@/lib/auth/crm-middleware';
 import { platformDb } from '@/lib/db/platform';
 
 // GET – Danh sách hoa hồng
 export async function GET(req: NextRequest) {
-    const auth = await requireEmkRole(req);
+    const auth = await requireCrmAuth(req);
     if (auth instanceof NextResponse) return auth;
 
     const { searchParams } = new URL(req.url);
@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
 
 // POST – Tạo hoa hồng mới
 export async function POST(req: NextRequest) {
-    const auth = await requireEmkRole(req, ['ADMIN', 'OPS']);
+    const auth = await requireCrmAuth(req, { allowedRoles: ['ADMIN', 'OPS'] });
     if (auth instanceof NextResponse) return auth;
 
     const body = await req.json();
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
 
 // PUT – Duyệt / từ chối hoa hồng
 export async function PUT(req: NextRequest) {
-    const auth = await requireEmkRole(req, ['ADMIN']);
+    const auth = await requireCrmAuth(req, { allowedRoles: ['ADMIN'] });
     if (auth instanceof NextResponse) return auth;
 
     const body = await req.json();
