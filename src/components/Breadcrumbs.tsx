@@ -37,6 +37,7 @@ const ROUTE_LABELS: Record<string, string> = {
     'changelog': 'Lịch sử cập nhật',
     'ai': 'Trung tâm AI',
     'products': 'Sản phẩm',
+    'finance': 'Tài chính',
 };
 
 export default function Breadcrumbs() {

@@ -31,6 +31,7 @@ function CrmIcon({ name, size = 18, color = 'currentColor' }: { name: string; si
         case 'close': return <svg {...props}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>;
         case 'more': return <svg {...props}><circle cx="12" cy="12" r="1" fill={color} /><circle cx="19" cy="12" r="1" fill={color} /><circle cx="5" cy="12" r="1" fill={color} /></svg>;
         case 'shield': return <svg {...props}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>;
+        case 'finance': return <svg {...props}><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>;
         default: return null;
     }
 }
@@ -41,6 +42,7 @@ const sidebarItems = [
     { href: '/emk-crm/accounts', icon: 'accounts', label: 'Tài khoản Hub', exact: false, group: 'manage' },
     { href: '/emk-crm/topups', icon: 'topups', label: 'Nạp tiền', exact: false, group: 'manage' },
     { href: '/emk-crm/products', icon: 'products', label: 'Sản phẩm', exact: false, group: 'manage' },
+    { href: '/emk-crm/finance', icon: 'finance', label: 'Tài chính', exact: false, group: 'manage' },
     { href: '/emk-crm/tasks', icon: 'tasks', label: 'Công việc', exact: false, group: 'ops' },
     { href: '/emk-crm/users', icon: 'shield', label: 'Nhân sự CRM', exact: false, group: 'ops' },
     { href: '/emk-crm/affiliates', icon: 'affiliates', label: 'Đại lý & Hoa hồng', exact: false, group: 'ops' },
