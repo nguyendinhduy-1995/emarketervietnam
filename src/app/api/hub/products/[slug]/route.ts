@@ -17,5 +17,13 @@ export async function GET(
     if (!product || !product.isActive || product.status !== 'PUBLISHED') {
         return NextResponse.json({ error: 'Không tìm thấy sản phẩm' }, { status: 404 });
     }
-    return NextResponse.json({ product });
+
+    // Parse JSON string fields (features, faq) — they may be stored as strings
+    const parsed = {
+        ...product,
+        features: typeof product.features === 'string' ? JSON.parse(product.features) : (product.features || []),
+        faq: typeof product.faq === 'string' ? JSON.parse(product.faq) : (product.faq || []),
+    };
+
+    return NextResponse.json({ product: parsed });
 }
