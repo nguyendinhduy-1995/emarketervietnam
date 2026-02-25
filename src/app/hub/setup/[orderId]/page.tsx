@@ -68,22 +68,25 @@ export default function CrmSetupPage() {
     const currentStepIndex = STEPS.findIndex(s => s.key === data?.order.status);
 
     const handleVerifyDns = async () => {
-        if (!data?.dnsVerification) return;
+        if (!data?.dnsVerification || !data?.crmInstance) return;
         setVerifying(true);
         setError('');
         try {
-            const r = await fetch('/api/hub/dns/verify', {
+            // Use new domain verify check endpoint
+            const r = await fetch('/api/hub/domain/verify/check', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ verificationId: data.dnsVerification.id }),
+                body: JSON.stringify({
+                    domain: data.dnsVerification.domain,
+                    workspaceId: data.crmInstance.id,
+                }),
             });
             const d = await r.json();
-            if (d.verified) {
-                // Update order status to DOMAIN_VERIFIED
-                await fetch(`/api/hub/setup/${orderId}/advance`, { method: 'POST' });
+            if (d.ok && d.status === 'VERIFIED' || d.status === 'ALREADY_VERIFIED') {
                 loadData();
             } else {
-                setError(d.error || 'DNS chưa được xác minh. Vui lòng chờ 5-30 phút.');
+                const issues = d.issues?.join('; ') || d.error || d.message;
+                setError(issues || 'DNS chưa được xác minh. Vui lòng chờ 5-60 phút.');
             }
         } catch {
             setError('Lỗi kết nối');
