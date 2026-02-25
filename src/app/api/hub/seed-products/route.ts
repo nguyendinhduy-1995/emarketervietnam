@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
 import { platformDb as db } from '@/lib/db/platform';
 
-// POST /api/hub/seed-products – Seed 3 demo products (CRM, APP, DIGITAL)
-// Only works if no products exist yet (safe to re-run)
+/**
+ * POST /api/hub/seed-products
+ * Seed products with full Product Registry format:
+ *   - imageRef, releaseVersion, demoUrl   → deploy config
+ *   - planOptions[]                       → pricing tiers
+ *   - addons[]                            → feature add-ons
+ * Safe to re-run: skips if products already exist.
+ */
 export async function POST() {
     const existing = await db.product.count();
     if (existing > 0) {
@@ -10,6 +16,7 @@ export async function POST() {
     }
 
     const products = [
+        // ══ CRM SPA PRO ══════════════════════════════════════
         {
             key: 'CRM_SPA_PRO', slug: 'crm-spa-pro', name: 'CRM Spa Pro',
             type: 'CRM', billingModel: 'SUBSCRIPTION', deliveryMethod: 'PROVISION_TENANT',
@@ -18,8 +25,55 @@ export async function POST() {
             description: 'Hệ thống CRM toàn diện cho spa & salon: quản lý khách hàng, đặt lịch, theo dõi dịch vụ, báo cáo doanh thu, loyalty program. Hỗ trợ multi-chi nhánh.',
             outcomeText: 'Tăng 30% lượng khách quay lại nhờ chăm sóc tự động',
             industry: ['SPA', 'SALON'],
-            priceOriginal: 990000, priceRental: 490000, priceSale: 0, priceMonthly: 490000,
+            priceOriginal: 990000, priceRental: 490000, priceSale: 0,
+            priceMonthly: 490000, priceYearly: 4900000,
             sortOrder: 1,
+
+            // ── Deploy Config ──
+            imageRef: 'registry.emk.vn/crm-spa:v1.0.0',
+            releaseVersion: 'v1.0.0',
+            demoUrl: 'https://crm-spa.emarketervietnam.vn',
+            composeTemplate: '/opt/emk/templates/crm-compose.yml',
+            envTemplate: {
+                DATABASE_URL: 'postgresql://$DB_USER:$DB_PASS@localhost/$DB_NAME',
+                HUB_API: 'https://hub.emarketervietnam.vn',
+                WORKSPACE_ID: '$WORKSPACE_ID',
+                INSTANCE_ID: '$INSTANCE_ID',
+                ENTITLEMENT_SECRET: '$ENTITLEMENT_SECRET',
+                DOMAIN: '$DOMAIN',
+                NODE_ENV: 'production',
+            },
+
+            // ── Plan Options ──
+            planOptions: [
+                {
+                    key: 'MONTHLY', label: 'Hàng tháng', price: 490000, cycle: 'MONTHLY',
+                    features: ['CRM_CORE', 'CORE_DASHBOARD', 'CORE_LEADS', 'CORE_TASKS', 'CORE_BILLING'],
+                },
+                {
+                    key: 'YEARLY', label: 'Hàng năm (−17%)', price: 4900000, cycle: 'YEARLY',
+                    features: ['CRM_CORE', 'CORE_DASHBOARD', 'CORE_LEADS', 'CORE_TASKS', 'CORE_BILLING'],
+                    discount: '17%',
+                },
+            ],
+
+            // ── Add-ons ──
+            addons: [
+                { featureKey: 'AI_ASSISTANT', label: 'AI Trợ lý', price: 99000, trialDays: 7, billing: 'SUBSCRIPTION' },
+                { featureKey: 'AI_ANALYTICS', label: 'AI Phân tích', price: 79000, trialDays: 7, billing: 'SUBSCRIPTION' },
+                { featureKey: 'AI_LEAD_SCORE', label: 'AI Chấm điểm Lead', price: 59000, trialDays: 7, billing: 'SUBSCRIPTION' },
+                { featureKey: 'AI_CHURN', label: 'AI Dự đoán rời bỏ', price: 59000, trialDays: 7, billing: 'SUBSCRIPTION' },
+                { featureKey: 'AI_GENERATE', label: 'AI Tạo nội dung', price: 0, trialDays: 0, billing: 'PAYG', unitPrice: 2000 },
+                { featureKey: 'AUTOMATION', label: 'Tự động hóa', price: 149000, trialDays: 7, billing: 'SUBSCRIPTION' },
+                { featureKey: 'DRIP_CAMPAIGN', label: 'Chiến dịch Drip', price: 199000, trialDays: 0, billing: 'SUBSCRIPTION', requires: ['AUTOMATION'] },
+                { featureKey: 'MESSAGING', label: 'Nhắn tin SMS/Zalo', price: 0, trialDays: 0, billing: 'PAYG', unitPrice: 500 },
+                { featureKey: 'EMAIL_TEMPLATES', label: 'Mẫu Email', price: 49000, trialDays: 7, billing: 'SUBSCRIPTION' },
+                { featureKey: 'DATA_EXPORT', label: 'Xuất dữ liệu', price: 49000, trialDays: 7, billing: 'SUBSCRIPTION' },
+                { featureKey: 'CMS', label: 'CMS / Blog', price: 99000, trialDays: 7, billing: 'SUBSCRIPTION' },
+                { featureKey: 'AFFILIATES', label: 'Hệ thống CTV', price: 149000, trialDays: 7, billing: 'SUBSCRIPTION' },
+                { featureKey: 'ONLINE_BOOKING', label: 'Đặt lịch trực tuyến', price: 99000, trialDays: 7, billing: 'SUBSCRIPTION' },
+            ],
+
             features: JSON.stringify([
                 { text: 'Quản lý khách hàng không giới hạn', included: true },
                 { text: 'Đặt lịch online', included: true },
@@ -29,10 +83,13 @@ export async function POST() {
                 { text: 'Multi-chi nhánh', included: false },
             ]),
             faq: JSON.stringify([
-                { q: 'Có dùng thử không?', a: 'Có! 14 ngày dùng thử miễn phí, không cần thẻ.' },
+                { q: 'Có dùng thử không?', a: 'Có! 7 ngày dùng thử miễn phí cho mỗi add-on.' },
                 { q: 'Hỗ trợ bao nhiêu nhân viên?', a: 'Gói Pro hỗ trợ tối đa 20 nhân viên.' },
+                { q: 'Deploy mất bao lâu?', a: 'Sau khi verify domain, CRM được triển khai tự động trong 5-10 phút.' },
             ]),
         },
+
+        // ══ AI CONTENT CREATOR ═══════════════════════════════
         {
             key: 'APP_AI_CONTENT', slug: 'app-ai-content', name: 'AI Content Creator',
             type: 'APP', billingModel: 'PAYG', deliveryMethod: 'ENABLE_APP',
@@ -41,8 +98,12 @@ export async function POST() {
             description: 'Ứng dụng tạo nội dung tự động: bài viết Facebook, caption Instagram, email marketing, mô tả sản phẩm. Hỗ trợ tiếng Việt chuẩn SEO.',
             outcomeText: 'Tiết kiệm 5 giờ/tuần cho việc viết content',
             industry: ['SALES', 'PERSONAL'],
-            priceOriginal: 0, priceRental: 0, priceSale: 0, priceMonthly: 0,
+            priceOriginal: 0, priceRental: 0, priceSale: 0, priceMonthly: 0, priceYearly: 0,
             sortOrder: 2,
+            planOptions: [
+                { key: 'PAYG', label: 'Trả theo lượt', price: 0, cycle: 'PAYG', features: ['AI_GENERATE'] },
+            ],
+            addons: [],
             features: JSON.stringify([
                 { text: 'Tạo caption Facebook/Instagram', included: true },
                 { text: 'Viết email marketing', included: true },
@@ -55,6 +116,8 @@ export async function POST() {
                 { q: 'Chất lượng AI?', a: 'Sử dụng GPT-4o, tối ưu hóa cho thị trường Việt Nam.' },
             ]),
         },
+
+        // ══ DIGITAL MARKETING GUIDE ══════════════════════════
         {
             key: 'DIG_MARKETING_GUIDE', slug: 'digital-marketing-guide', name: 'Tài liệu Digital Marketing A-Z',
             type: 'DIGITAL', billingModel: 'ONE_TIME', deliveryMethod: 'DOWNLOAD_GRANT',
@@ -63,8 +126,12 @@ export async function POST() {
             description: 'Bộ tài liệu 200+ trang: Facebook Ads, Google Ads, SEO, Email Marketing, Content Strategy. Kèm template + case study thực tế Việt Nam.',
             outcomeText: 'Nắm vững kiến thức digital marketing trong 30 ngày',
             industry: ['SALES', 'PERSONAL'],
-            priceOriginal: 990000, priceRental: 0, priceSale: 499000, priceMonthly: 0,
+            priceOriginal: 990000, priceRental: 0, priceSale: 499000, priceMonthly: 0, priceYearly: 0,
             sortOrder: 3,
+            planOptions: [
+                { key: 'ONE_TIME', label: 'Mua một lần', price: 499000, cycle: 'ONE_TIME', features: ['DIGITAL_ASSETS'] },
+            ],
+            addons: [],
             features: JSON.stringify([
                 { text: '200+ trang tài liệu chuyên sâu', included: true },
                 { text: '50+ template sẵn dùng', included: true },

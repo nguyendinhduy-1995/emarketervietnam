@@ -432,9 +432,18 @@ model Product {
   priceRental    Int      @default(0) // giá thuê (VND/tháng)
   priceSale      Int      @default(0) // giá bán (VND)
   priceMonthly   Int      @default(0) // backward compat
+  priceYearly    Int      @default(0) // giá năm (VND)
   features       Json?    // [{text, included}]
   faq            Json?    // [{q, a}]
   metadata       Json?    // extra config
+  // ── Deploy Config (CRM provisioning) ──
+  imageRef        String?  // Docker image: registry.emk.vn/crm-spa:v1.2.0
+  releaseVersion  String?  // v1.2.0
+  demoUrl         String?  // https://crm-spa.emarketervietnam.vn
+  composeTemplate String?  // docker-compose template path
+  envTemplate     Json?    // { DB_HOST: "$DB_HOST", DOMAIN: "$DOMAIN" }
+  addons          Json?    // [{ featureKey, price, trialDays, billing }]
+  planOptions     Json?    // [{ key, price, cycle, features }]  — plan options
   isActive       Boolean  @default(true)
   sortOrder      Int      @default(0)
   createdAt      DateTime @default(now())

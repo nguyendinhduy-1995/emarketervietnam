@@ -27,29 +27,43 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: 'Domain mismatch' }, { status: 403 });
     }
 
-    // Get active entitlements
+    // Get active + trial entitlements
     const now = new Date();
     const entitlements = await db.entitlement.findMany({
         where: {
             workspaceId,
-            status: 'ACTIVE',
+            status: { in: ['ACTIVE', 'TRIAL'] },
             activeFrom: { lte: now },
             OR: [{ activeTo: null }, { activeTo: { gt: now } }],
         },
     });
 
-    // Get subscription info
+    // Get subscription info (include PAST_DUE + SUSPENDED for kill switch)
     const subscription = await db.subscription.findFirst({
-        where: { workspaceId, status: { in: ['ACTIVE', 'TRIAL'] } },
+        where: { workspaceId, status: { in: ['ACTIVE', 'TRIAL', 'PAST_DUE', 'SUSPENDED'] } },
+        orderBy: { createdAt: 'desc' },
     });
 
-    const features: Record<string, { enabled: boolean; tier: string; expiresAt: string | null; limits?: unknown; flags?: unknown }> = {};
+    const features: Record<string, { enabled: boolean; tier: string; status?: string; expiresAt: string | null; limits?: unknown; flags?: unknown }> = {};
     for (const ent of entitlements) {
         features[ent.moduleKey] = {
-            enabled: true, tier: ent.scope,
+            enabled: true, tier: ent.scope, status: ent.status,
             expiresAt: ent.activeTo?.toISOString() || null,
             limits: ent.limits ?? undefined, flags: ent.featureFlags ?? undefined,
         };
+    }
+
+    // Kill switch: if subscription is SUSPENDED or PAST_DUE, only keep CORE features
+    const isSuspended = subscription?.status === 'SUSPENDED';
+    const isPastDue = subscription?.status === 'PAST_DUE';
+    if (isSuspended) {
+        // Kill all non-core features
+        for (const key of Object.keys(features)) {
+            const deployLog = instance.deployLog as Record<string, unknown> | null;
+            if (!key.startsWith('CORE_') && key !== deployLog?.productKey) {
+                features[key] = { ...features[key], enabled: false };
+            }
+        }
     }
 
     const snapshot = {
@@ -61,7 +75,9 @@ export async function GET(req: NextRequest) {
             trialEndsAt: subscription.trialEndsAt?.toISOString(),
         } : null,
         generatedAt: now.toISOString(),
-        expiresAt: new Date(now.getTime() + 3600_000).toISOString(),
+        // 30-minute revalidation interval (as per SPEC FINAL)
+        expiresAt: new Date(now.getTime() + 30 * 60_000).toISOString(),
+        revalidateAfterMs: 30 * 60_000,
     };
 
     const signingKey = process.env.ENTITLEMENT_SECRET || 'entitlement-signing-key';

@@ -13,7 +13,12 @@ export async function POST(req: NextRequest) {
     const userId = session.userId;
 
     const body = await req.json();
-    const { productId, planId, source, couponCode, idempotencyKey, domain, businessName, adminEmail, cycle } = body;
+    const {
+        productId, planId, source, couponCode, idempotencyKey,
+        domain, businessName, adminEmail, cycle,
+        planKey: inputPlanKey, addons: inputAddons,
+    } = body;
+    const selectedAddons: string[] = Array.isArray(inputAddons) ? inputAddons : [];
     if (!productId) return NextResponse.json({ error: 'productId là bắt buộc' }, { status: 400 });
 
     // CRM products require domain
@@ -26,7 +31,7 @@ export async function POST(req: NextRequest) {
         if (existing) return NextResponse.json({ ok: true, order: existing, message: 'Đã xử lý trước đó' });
     }
 
-    // 1. Get product
+    // 1. Get product (with registry data)
     const product = await db.product.findUnique({
         where: { id: productId },
         include: { digitalAssets: { where: { isActive: true } } },
@@ -43,12 +48,31 @@ export async function POST(req: NextRequest) {
     // 2. Determine price
     let totalAmount = 0;
     const billingCycle = cycle || 'MONTHLY';
+    const resolvedPlanKey = inputPlanKey || (billingCycle === 'YEARLY' ? 'YEARLY' : 'MONTHLY');
+
     if (product.billingModel === 'SUBSCRIPTION') {
+        // Use priceYearly if available, otherwise fall back to monthly * 12 * 0.8
         const monthlyPrice = product.priceRental || product.priceMonthly;
-        totalAmount = billingCycle === 'YEARLY' ? monthlyPrice * 12 * 0.8 : monthlyPrice; // 20% discount for yearly
+        if (billingCycle === 'YEARLY') {
+            totalAmount = (product as { priceYearly?: number }).priceYearly || Math.floor(monthlyPrice * 12 * 0.83);
+        } else {
+            totalAmount = monthlyPrice;
+        }
     } else if (product.billingModel === 'ONE_TIME') {
         totalAmount = product.priceSale || product.priceOriginal;
     }
+
+    // Add subscription addon prices
+    let addonTotal = 0;
+    const productAddons = ((product.addons as unknown) as Array<{ featureKey: string; price: number; billing: string; trialDays?: number }>) || [];
+    const resolvedAddons = selectedAddons.map(fk => {
+        const def = productAddons.find((a: { featureKey: string }) => a.featureKey === fk);
+        return def || { featureKey: fk, price: 0, billing: 'SUBSCRIPTION', trialDays: 7 };
+    }).filter(a => a.billing === 'SUBSCRIPTION' && (a.trialDays || 0) === 0);
+    for (const a of resolvedAddons) {
+        addonTotal += a.price;
+    }
+    totalAmount += addonTotal;
 
     // 3. Apply coupon
     let discountAmount = 0;
@@ -106,13 +130,23 @@ export async function POST(req: NextRequest) {
             data: {
                 userId, orgId, workspaceId: workspace?.id, source: source || 'HUB', status: orderStatus,
                 totalAmount, discountAmount, couponId, idempotencyKey: idemKey,
-                note: isCrm ? JSON.stringify({ domain, businessName, adminEmail, cycle: billingCycle }) : null,
+                note: isCrm ? JSON.stringify({
+                    domain, businessName, adminEmail, cycle: billingCycle,
+                    planKey: resolvedPlanKey, addons: selectedAddons,
+                }) : null,
                 items: {
                     create: {
                         productId, planId: planId || null, quantity: 1,
                         unitPrice: totalAmount, lineTotal: chargeAmount,
-                        priceSnapshot: { unitPrice: totalAmount, billing: product.billingModel, cycle: billingCycle, version: 1 },
-                        meta: isCrm ? { domain, businessName, adminEmail } : undefined,
+                        priceSnapshot: {
+                            unitPrice: totalAmount, addonTotal,
+                            billing: product.billingModel, cycle: billingCycle,
+                            planKey: resolvedPlanKey, addons: selectedAddons,
+                            version: 2,
+                        },
+                        meta: isCrm
+                            ? { domain, businessName, adminEmail, planKey: resolvedPlanKey, addons: selectedAddons }
+                            : undefined,
                     },
                 },
             },
@@ -165,16 +199,40 @@ export async function POST(req: NextRequest) {
             await tx.coupon.update({ where: { id: couponId }, data: { usedCount: { increment: 1 } } });
         }
 
-        // Entitlement
+        // Entitlement — Core product
         if (workspace) {
             await tx.entitlement.create({
                 data: {
                     workspaceId: workspace.id, userId, productId, moduleKey: product.key,
                     scope: isCrm ? 'TENANT' : 'USER',
                     status: isCrm ? 'PENDING' : 'ACTIVE', // CRM entitlements activate after deploy
-                    meta: { orderId: order.id, productType: product.type, domain: isCrm ? domain : undefined },
+                    meta: {
+                        orderId: order.id, productType: product.type,
+                        domain: isCrm ? domain : undefined,
+                        planKey: resolvedPlanKey,
+                    },
                 },
             });
+
+            // Entitlements — Add-ons (with trial support)
+            for (const fk of selectedAddons) {
+                const addonDef = productAddons.find((a: { featureKey: string }) => a.featureKey === fk);
+                const trialDays = addonDef?.trialDays || 0;
+                const isTrialAddon = trialDays > 0 && addonDef?.price && addonDef.price > 0;
+                await tx.entitlement.create({
+                    data: {
+                        workspaceId: workspace.id, userId, productId, moduleKey: fk,
+                        scope: 'TENANT',
+                        status: isCrm ? 'PENDING' : (isTrialAddon ? 'TRIAL' : 'ACTIVE'),
+                        activeTo: isTrialAddon ? new Date(Date.now() + trialDays * 86400000) : null,
+                        meta: {
+                            orderId: order.id, addonKey: fk,
+                            billing: addonDef?.billing || 'SUBSCRIPTION',
+                            trialDays,
+                        },
+                    },
+                });
+            }
         }
 
         // CRM: create DNS verification + CRM instance records
@@ -200,11 +258,23 @@ export async function POST(req: NextRequest) {
                     workspaceId: workspace.id, domain: normalizedDomain,
                     dbName: `crm_${workspace.id.replace(/-/g, '_').slice(0, 20)}`,
                     adminUserId: userId, status: 'PENDING',
-                    deployLog: { orderId: order.id, businessName, adminEmail },
+                    deployLog: {
+                        orderId: order.id, businessName, adminEmail,
+                        productKey: product.key, planKey: resolvedPlanKey,
+                        addons: selectedAddons,
+                        imageRef: (product as { imageRef?: string }).imageRef || null,
+                        releaseVersion: (product as { releaseVersion?: string }).releaseVersion || null,
+                    },
                 },
                 update: {
                     domain: normalizedDomain, status: 'PENDING',
-                    deployLog: { orderId: order.id, businessName, adminEmail },
+                    deployLog: {
+                        orderId: order.id, businessName, adminEmail,
+                        productKey: product.key, planKey: resolvedPlanKey,
+                        addons: selectedAddons,
+                        imageRef: (product as { imageRef?: string }).imageRef || null,
+                        releaseVersion: (product as { releaseVersion?: string }).releaseVersion || null,
+                    },
                 },
             });
 
