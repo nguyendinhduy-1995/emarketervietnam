@@ -1,23 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { platformDb as db } from '@/lib/db/platform';
+import { getAnySession } from '@/lib/auth/jwt';
 
 /**
  * POST /api/hub/admin/suspend-instance
  * 
- * Kill switch: Hub admin suspends a CRM instance.
- * - Sets CrmInstance.status = SUSPENDED
- * - Sets all Entitlements to SUSPENDED (except CORE)
- * - Sets Subscription to SUSPENDED
- * - Logs audit event
+ * Kill switch: Hub admin suspends or reactivates a CRM instance.
  * 
- * CRM instance will pick this up on next entitlement revalidation (≤30 min).
+ * Security:
+ * - Requires authenticated admin user (session.isAdmin)
+ * - Logs: who, when, which instance, reason
+ * - Cascades: CrmInstance + Entitlements + Subscription
+ * 
+ * Body: { workspaceId, reason, action: "SUSPEND" | "REACTIVATE" }
  */
 export async function POST(req: NextRequest) {
-    // Simple admin auth (bearer token)
-    const auth = req.headers.get('authorization')?.replace('Bearer ', '');
-    const adminSecret = process.env.ADMIN_SECRET || process.env.CRON_SECRET;
-    if (!auth || auth !== adminSecret) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // ── Auth: require admin session ──
+    const session = await getAnySession();
+    if (!session) {
+        return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
+    }
+
+    // Check admin role
+    const user = await db.user.findUnique({ where: { id: session.userId }, select: { isAdmin: true, name: true } });
+    if (!user?.isAdmin) {
+        return NextResponse.json({ error: 'Chỉ admin mới có quyền thao tác này' }, { status: 403 });
     }
 
     const body = await req.json();
@@ -26,31 +33,47 @@ export async function POST(req: NextRequest) {
     if (!workspaceId) {
         return NextResponse.json({ error: 'workspaceId required' }, { status: 400 });
     }
+    if (!reason || reason.trim().length < 5) {
+        return NextResponse.json({ error: 'reason required (min 5 chars)' }, { status: 400 });
+    }
 
-    const targetAction = action || 'SUSPEND'; // SUSPEND | REACTIVATE
+    const targetAction = action || 'SUSPEND';
+    if (!['SUSPEND', 'REACTIVATE'].includes(targetAction)) {
+        return NextResponse.json({ error: 'Invalid action. Use SUSPEND or REACTIVATE.' }, { status: 400 });
+    }
 
     const instance = await db.crmInstance.findUnique({ where: { workspaceId } });
     if (!instance) {
         return NextResponse.json({ error: 'Instance not found' }, { status: 404 });
     }
 
+    const auditPayload = {
+        workspaceId,
+        instanceId: instance.id,
+        domain: instance.domain,
+        action: targetAction,
+        reason: reason.trim(),
+        performedBy: session.userId,
+        performedByName: user.name,
+        performedAt: new Date().toISOString(),
+    };
+
     if (targetAction === 'SUSPEND') {
-        // ── Kill Switch: Suspend ──
         await db.$transaction([
-            // 1. Suspend CRM instance
+            // 1. Suspend instance
             db.crmInstance.update({
                 where: { workspaceId },
                 data: { status: 'SUSPENDED' },
             }),
 
-            // 2. Suspend all non-core entitlements  
+            // 2. Suspend non-core entitlements
             db.entitlement.updateMany({
                 where: {
                     workspaceId,
-                    status: 'ACTIVE',
+                    status: { in: ['ACTIVE', 'TRIAL'] },
                     moduleKey: { not: { startsWith: 'CORE_' } },
                 },
-                data: { status: 'SUSPENDED', revokeReason: reason || 'Admin kill switch' },
+                data: { status: 'SUSPENDED', revokeReason: reason.trim() },
             }),
 
             // 3. Suspend subscription
@@ -59,30 +82,34 @@ export async function POST(req: NextRequest) {
                 data: { status: 'SUSPENDED' },
             }),
 
-            // 4. Audit log
+            // 4. Audit log (who, when, what, why)
             db.eventLog.create({
                 data: {
+                    workspaceId,
+                    actorUserId: session.userId,
                     type: 'INSTANCE_SUSPENDED',
-                    payloadJson: { workspaceId, instanceId: instance.id, reason, action: targetAction },
+                    payloadJson: auditPayload,
                 },
             }),
 
-            // 5. Notification to user
+            // 5. Notification (if admin user exists)
             ...(instance.adminUserId ? [db.notificationQueue.create({
                 data: {
                     userId: instance.adminUserId,
+                    workspaceId,
                     type: 'ENTITLEMENT_GRANTED',
                     title: '⚠️ CRM đã bị tạm ngưng',
-                    body: reason || 'Tài khoản CRM của bạn đã bị tạm ngưng. Liên hệ hỗ trợ để biết thêm.',
-                    referenceType: 'CRM_INSTANCE', referenceId: instance.id,
+                    body: `Lý do: ${reason.trim()}. Liên hệ hỗ trợ để biết thêm.`,
+                    referenceType: 'CRM_INSTANCE',
+                    referenceId: instance.id,
                 },
             })] : []),
         ]);
 
-        return NextResponse.json({ ok: true, action: 'SUSPENDED', workspaceId });
+        return NextResponse.json({ ok: true, action: 'SUSPENDED', workspaceId, audit: auditPayload });
 
-    } else if (targetAction === 'REACTIVATE') {
-        // ── Reactivate ──
+    } else {
+        // REACTIVATE
         await db.$transaction([
             db.crmInstance.update({
                 where: { workspaceId },
@@ -101,24 +128,26 @@ export async function POST(req: NextRequest) {
 
             db.eventLog.create({
                 data: {
+                    workspaceId,
+                    actorUserId: session.userId,
                     type: 'INSTANCE_REACTIVATED',
-                    payloadJson: { workspaceId, instanceId: instance.id, reason, action: targetAction },
+                    payloadJson: auditPayload,
                 },
             }),
 
             ...(instance.adminUserId ? [db.notificationQueue.create({
                 data: {
                     userId: instance.adminUserId,
+                    workspaceId,
                     type: 'ENTITLEMENT_GRANTED',
                     title: '✅ CRM đã được kích hoạt lại',
-                    body: 'Tài khoản CRM của bạn đã được kích hoạt lại. Mọi tính năng đã hoạt động bình thường.',
-                    referenceType: 'CRM_INSTANCE', referenceId: instance.id,
+                    body: 'Mọi tính năng đã hoạt động bình thường.',
+                    referenceType: 'CRM_INSTANCE',
+                    referenceId: instance.id,
                 },
             })] : []),
         ]);
 
-        return NextResponse.json({ ok: true, action: 'REACTIVATED', workspaceId });
+        return NextResponse.json({ ok: true, action: 'REACTIVATED', workspaceId, audit: auditPayload });
     }
-
-    return NextResponse.json({ error: 'Invalid action. Use SUSPEND or REACTIVATE.' }, { status: 400 });
 }
