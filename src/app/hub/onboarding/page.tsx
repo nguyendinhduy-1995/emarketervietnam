@@ -27,7 +27,7 @@ export default function OnboardingPage() {
     const [industry, setIndustry] = useState('');
     const [goal, setGoal] = useState('');
     const [name, setName] = useState('');
-    const [seedDemo, setSeedDemo] = useState(true);
+
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [slideDir, setSlideDir] = useState<'left' | 'right'>('left');
@@ -51,19 +51,7 @@ export default function OnboardingPage() {
             const wsData = await wsRes.json();
             if (!wsRes.ok) { setError(wsData.error || 'Có lỗi xảy ra'); setLoading(false); return; }
 
-            if (seedDemo && wsData.workspaceId) {
-                try {
-                    await fetch('/api/hub/seed-demo', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            workspaceId: wsData.workspaceId,
-                            industry: industry || 'SPA',
-                            goal: goal || 'APPOINTMENTS',
-                        }),
-                    });
-                } catch { /* Non-critical */ }
-            }
+
 
             toastSuccess('Đã tạo không gian làm việc! 🎉');
             // Show product recommendations instead of immediate redirect
@@ -229,25 +217,7 @@ export default function OnboardingPage() {
                         }}
                     />
 
-                    {/* Seed toggle */}
-                    <label style={{
-                        display: 'flex', alignItems: 'center', gap: '12px',
-                        padding: '14px 16px', borderRadius: '14px',
-                        background: 'var(--bg-card)', border: '1px solid var(--border)',
-                        cursor: 'pointer',
-                    }}>
-                        <input
-                            type="checkbox" checked={seedDemo}
-                            onChange={e => setSeedDemo(e.target.checked)}
-                            style={{ width: '20px', height: '20px', accentColor: 'var(--accent-primary)' }}
-                        />
-                        <div>
-                            <div style={{ fontWeight: 600, fontSize: '14px' }}>📦 Tạo dữ liệu mẫu</div>
-                            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                                Thêm khách hàng, dịch vụ, lịch hẹn demo sẵn
-                            </div>
-                        </div>
-                    </label>
+
 
                     {/* Summary card */}
                     <div style={{

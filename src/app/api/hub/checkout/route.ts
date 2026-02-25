@@ -156,6 +156,19 @@ export async function POST(req: NextRequest) {
                     meta: { orderId: order.id, productType: product.type },
                 },
             });
+
+            // CRM post-purchase: notify user to set up DNS for their domain
+            if (product.type === 'CRM') {
+                await tx.notificationQueue.create({
+                    data: {
+                        userId, workspaceId: workspace.id,
+                        type: 'ENTITLEMENT_GRANTED',
+                        title: '🚀 Thiết lập CRM — Bước tiếp theo',
+                        body: 'Vào Cài đặt > Domain để kết nối tên miền riêng và triển khai CRM của bạn.',
+                        referenceType: 'ORDER', referenceId: order.id,
+                    },
+                });
+            }
         }
 
         // Subscription with trial
