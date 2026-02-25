@@ -244,6 +244,8 @@ export default function SettingsPage() {
             <section style={sectionStyle}>
                 <h2 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Khác</h2>
                 {[
+                    { icon: '🌐', label: 'Domain & CRM', href: '/hub/settings/domain', desc: 'Kết nối tên miền riêng, triển khai CRM' },
+                    { icon: '📊', label: 'Lịch sử sử dụng', href: '/hub/usage', desc: 'Chi tiết PAYG và quota' },
                     { icon: '🔔', label: 'Thông báo', href: '/hub/settings/notifications', desc: 'Tuỳ chỉnh loại và tần suất thông báo' },
                     { icon: '👥', label: 'Thành viên', href: '/hub/settings/team', desc: 'Mời và quản lý thành viên' },
                     { icon: '📋', label: 'Nhật ký hoạt động', href: '/hub/settings/timeline', desc: 'Xem mọi thay đổi gần đây' },
