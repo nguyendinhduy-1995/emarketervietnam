@@ -51,13 +51,26 @@ export function middleware(req: NextRequest) {
         }
     }
 
-    // 2. API Rate Limiting for sensitive public routes
-    if (url.pathname === '/api/auth/signup' || url.pathname.startsWith('/api/public/book/')) {
-        const ip = req.headers.get('x-real-ip') || req.headers.get('x-forwarded-for') || '127.0.0.1';
-        const limit = url.pathname === '/api/auth/signup' ? 50 : 20; // 50 reqs for signup to allow parallel E2E, 20 for booking
-        const windowMs = 15 * 60 * 1000; // 15 mins
+    // 2. API Rate Limiting for sensitive routes
+    const sensitiveRoutes: Array<{ pattern: string; limit: number; windowMs: number }> = [
+        { pattern: '/api/auth/signup', limit: 50, windowMs: 15 * 60_000 },
+        { pattern: '/api/public/book/', limit: 20, windowMs: 15 * 60_000 },
+        { pattern: '/api/hub/usage/charge', limit: 10, windowMs: 60_000 },
+        { pattern: '/api/hub/usage/complete', limit: 10, windowMs: 60_000 },
+        { pattern: '/api/hub/dns/init', limit: 5, windowMs: 60_000 },
+        { pattern: '/api/hub/dns/verify', limit: 10, windowMs: 60_000 },
+        { pattern: '/api/hub/deploy/enqueue', limit: 3, windowMs: 60_000 },
+        { pattern: '/api/hub/checkout', limit: 10, windowMs: 60_000 },
+        { pattern: '/api/hub/launch', limit: 20, windowMs: 60_000 },
+        { pattern: '/api/auth/login', limit: 20, windowMs: 15 * 60_000 },
+    ];
 
-        if (!checkRateLimit(ip, limit, windowMs)) {
+    const matchedRoute = sensitiveRoutes.find(r =>
+        url.pathname === r.pattern || url.pathname.startsWith(r.pattern)
+    );
+    if (matchedRoute) {
+        const ip = req.headers.get('x-real-ip') || req.headers.get('x-forwarded-for') || '127.0.0.1';
+        if (!checkRateLimit(ip, matchedRoute.limit, matchedRoute.windowMs)) {
             return NextResponse.json({ error: 'Quá nhiều yêu cầu. Vui lòng thử lại sau.' }, { status: 429 });
         }
     }

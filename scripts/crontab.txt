@@ -1,0 +1,15 @@
+# eMarketer Hub — Cron Schedule
+# Add to server crontab: crontab -e
+# Replace YOUR_SECRET with your CRON_SECRET value
+
+# Subscription auto-renew — every day at 6:00 AM
+0 6 * * * curl -s -X POST http://localhost:3000/api/cron/subscription-renew?secret=YOUR_SECRET >> /var/log/emk-cron.log 2>&1
+
+# DNS verification check — every 15 minutes
+*/15 * * * * curl -s -X POST http://localhost:3000/api/cron/dns-check?secret=YOUR_SECRET >> /var/log/emk-cron.log 2>&1
+
+# Process notifications (email) — every 5 minutes
+*/5 * * * * curl -s -X POST http://localhost:3000/api/cron/process-notifications?secret=YOUR_SECRET >> /var/log/emk-cron.log 2>&1
+
+# Unified cron (runs all tasks) — alternative to individual crons above
+# */5 * * * * curl -s -X POST http://localhost:3000/api/cron/process-all?secret=YOUR_SECRET >> /var/log/emk-cron.log 2>&1
