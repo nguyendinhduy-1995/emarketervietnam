@@ -1,0 +1,43 @@
+# ══════════════════════════════════════════════════════════════
+# eMarketer CRM Instance — Docker Compose Template
+#
+# Used by deploy-instance.sh to spin up customer CRM instances.
+# Variables (replaced by deployer):
+#   ${IMAGE_REF}       - Docker image ref
+#   ${CONTAINER_NAME}  - Container name
+#   ${PORT}            - Mapped port
+# ══════════════════════════════════════════════════════════════
+version: '3.8'
+
+services:
+  app:
+    image: ${IMAGE_REF:-registry.emk.vn/crm-spa:latest}
+    container_name: ${CONTAINER_NAME:-emk-crm-instance}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - PORT=${PORT:-3000}
+    ports:
+      - "127.0.0.1:${PORT:-3000}:${PORT:-3000}"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+    networks:
+      - emk-net
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:${PORT:-3000}/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+
+networks:
+  emk-net:
+    driver: bridge
