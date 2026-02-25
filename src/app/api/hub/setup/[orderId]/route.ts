@@ -21,17 +21,54 @@ export async function GET(
         return NextResponse.json({ error: 'Không tìm thấy đơn hàng' }, { status: 404 });
     }
 
-    // Get workspace from order
-    const membership = await db.membership.findFirst({
+    // Get or auto-create workspace for user
+    let membership = await db.membership.findFirst({
         where: { userId: session.userId },
         orderBy: { createdAt: 'asc' },
     });
 
     if (!membership) {
-        return NextResponse.json({ error: 'Không tìm thấy workspace' }, { status: 404 });
+        // Auto-create Org → Workspace → Membership for first-time buyers
+        const user = await db.user.findUnique({ where: { id: session.userId } });
+        const displayName = user?.name || 'My Business';
+
+        const org = await db.org.create({
+            data: {
+                name: displayName,
+                ownerUserId: session.userId,
+            },
+        });
+        const workspace = await db.workspace.create({
+            data: {
+                name: `${displayName} Workspace`,
+                slug: `ws-${session.userId.slice(-8)}-${Date.now().toString(36)}`,
+                orgId: org.id,
+            },
+        });
+        membership = await db.membership.create({
+            data: {
+                userId: session.userId,
+                workspaceId: workspace.id,
+                role: 'OWNER',
+            },
+        });
+
+        // Also update the order with workspaceId
+        await db.commerceOrder.update({
+            where: { id: orderId },
+            data: { workspaceId: workspace.id },
+        });
     }
 
     const workspaceId = order.workspaceId || membership.workspaceId;
+
+    // Update order workspaceId if missing
+    if (!order.workspaceId && workspaceId) {
+        await db.commerceOrder.update({
+            where: { id: orderId },
+            data: { workspaceId },
+        });
+    }
 
     // Get DNS verification
     const dnsVerification = await db.dnsVerification.findFirst({
@@ -40,7 +77,7 @@ export async function GET(
     });
 
     // Get CRM instance
-    const crmInstance = await db.crmInstance.findUnique({
+    const crmInstance = await db.crmInstance.findFirst({
         where: { workspaceId },
     });
 
@@ -52,6 +89,7 @@ export async function GET(
             note: order.note,
             createdAt: order.createdAt,
         },
+        workspaceId,
         dnsVerification: dnsVerification ? {
             id: dnsVerification.id,
             domain: dnsVerification.domain,
