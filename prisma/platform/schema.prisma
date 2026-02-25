@@ -96,6 +96,8 @@ model Workspace {
   reminderLogs     ReminderLog[]
   aiProviderKeys   AiProviderKey[]
   emkAccount       EmkAccount?
+  dnsVerifications DnsVerification[]
+  crmInstance      CrmInstance?
 
   @@index([orgId])
 }
@@ -1172,4 +1174,47 @@ model AdminAuditLog {
   @@index([resource, resourceId])
   @@index([workspaceId, createdAt])
   @@index([action, createdAt])
+}
+
+// ─── CRM Instance Management ────────────────────────────────
+
+model DnsVerification {
+  id            String    @id @default(cuid())
+  workspaceId   String
+  domain        String
+  verifyToken   String    @unique  // token for TXT record _emk-verify.<domain>
+  status        String    @default("PENDING") // PENDING | VERIFIED | FAILED | EXPIRED
+  attempts      Int       @default(0)
+  lastCheckedAt DateTime?
+  verifiedAt    DateTime?
+  expiresAt     DateTime?  // token expiry
+  createdAt     DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@unique([workspaceId, domain])
+  @@index([status])
+  @@index([verifyToken])
+}
+
+model CrmInstance {
+  id            String    @id @default(cuid())
+  workspaceId   String    @unique
+  domain        String    @unique
+  instanceId    String?   // container/deployment ID
+  crmUrl        String?   // https://domain.com
+  dbName        String?   // isolated DB name
+  adminUserId   String?   // seeded admin user ID
+  status        String    @default("PENDING") // PENDING | DNS_VERIFIED | DEPLOYING | ACTIVE | SUSPENDED | TERMINATED
+  deployLog     Json?     // deployment logs/metadata
+  deployedAt    DateTime?
+  suspendedAt   DateTime?
+  terminatedAt  DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([status])
+  @@index([domain])
 }
