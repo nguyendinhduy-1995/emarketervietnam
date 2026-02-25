@@ -6,6 +6,7 @@ import AiChatWidget from '@/components/AiChatWidget';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { IfFeature } from '@/components/FeatureGate';
 import { EntitlementProvider } from '@/hooks/useEntitlement';
+import DemoCTA from '@/components/DemoCTA';
 
 // SVG Icon component for CRM
 function CrmIcon({ name, size = 18, color = 'currentColor' }: { name: string; size?: number; color?: string }) {
@@ -444,6 +445,9 @@ export default function EmkCrmLayout({ children }: { children: React.ReactNode }
                 </div>
 
                 <AiChatWidget layer="crm" currentPage={pathname} />
+                {process.env.NEXT_PUBLIC_DEMO_MODE === 'true' && (
+                    <DemoCTA productKey="CRM_SPA_PRO" productName="CRM Spa Pro" />
+                )}
 
                 {/* Scoped CSS: responsive + animations */}
                 <style>{`
