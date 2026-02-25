@@ -9,10 +9,13 @@ interface CmsPost {
 }
 
 interface TodayData {
-    alerts: Array<{ id: string; type: 'danger' | 'warning'; message: string }>;
+    alerts: Array<{ id: string; type: 'danger' | 'warning' | 'info'; message: string }>;
     kpi: { label: string; current: number; target: number; percent: number };
     workspaces: Array<{ id: string; name: string; slug: string; status: string; role: string }>;
     hasCompletedOnboarding: boolean;
+    crmInstance?: { status: string; domain: string; crmUrl: string | null } | null;
+    subscription?: { status: string; planKey: string; daysLeft: number; periodEnd: string } | null;
+    wallet?: { balance: number; currency: string } | null;
 }
 
 export default function HubDashboard() {
@@ -113,6 +116,52 @@ export default function HubDashboard() {
                     <div><div style={{ fontWeight: 700, fontSize: '14px' }}>Tài khoản</div><div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Ví, thanh toán, cài đặt</div></div>
                 </Link>
             </div>
+
+            {/* CRM Instance */}
+            {data.crmInstance && (
+                <section>
+                    <h2 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>CRM của bạn</h2>
+                    <div style={{
+                        padding: '18px', borderRadius: '16px',
+                        background: data.crmInstance.status === 'ACTIVE'
+                            ? 'linear-gradient(135deg, rgba(34,197,94,0.08), rgba(59,130,246,0.08))'
+                            : 'var(--bg-card)',
+                        border: `1px solid ${data.crmInstance.status === 'ACTIVE' ? 'rgba(34,197,94,0.2)' : 'var(--border)'}`,
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '12px' }}>
+                            <span style={{ fontSize: '28px' }}>
+                                {data.crmInstance.status === 'ACTIVE' ? '✅' : data.crmInstance.status === 'DEPLOYING' ? '⏳' : data.crmInstance.status === 'SUSPENDED' ? '⚠️' : '📋'}
+                            </span>
+                            <div style={{ flex: 1 }}>
+                                <div style={{ fontWeight: 700, fontSize: '16px' }}>{data.crmInstance.domain}</div>
+                                <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                                    {data.crmInstance.status === 'ACTIVE' ? 'Đang hoạt động' :
+                                        data.crmInstance.status === 'DEPLOYING' ? 'Đang triển khai...' :
+                                            data.crmInstance.status === 'SUSPENDED' ? 'Tạm ngưng' :
+                                                data.crmInstance.status}
+                                </div>
+                            </div>
+                        </div>
+                        {data.crmInstance.crmUrl ? (
+                            <a href={data.crmInstance.crmUrl} target="_blank" rel="noreferrer" style={{
+                                display: 'block', padding: '12px', borderRadius: '12px', fontWeight: 700,
+                                background: 'var(--accent-gradient)', border: 'none', color: 'white',
+                                textAlign: 'center', textDecoration: 'none', fontSize: '14px',
+                            }}>
+                                🚀 Mở CRM
+                            </a>
+                        ) : (
+                            <Link href="/hub/settings/domain" style={{
+                                display: 'block', padding: '12px', borderRadius: '12px', fontWeight: 700,
+                                background: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)',
+                                textAlign: 'center', textDecoration: 'none', fontSize: '14px',
+                            }}>
+                                🌐 Thiết lập Domain
+                            </Link>
+                        )}
+                    </div>
+                </section>
+            )}
 
             {/* KPI Progress */}
             {data.kpi.target > 0 && (
