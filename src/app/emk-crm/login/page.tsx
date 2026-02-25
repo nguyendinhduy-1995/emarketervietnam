@@ -21,7 +21,8 @@ export default function CrmLoginPage() {
             });
             const data = await res.json();
             if (!res.ok) { setError(data.error || 'Đã xảy ra lỗi'); return; }
-            router.push('/emk-crm');
+            const isProd = typeof window !== 'undefined' && !window.location.hostname.includes('localhost');
+            window.location.href = isProd ? 'https://crm.emarketervietnam.vn/emk-crm' : '/emk-crm';
         } catch {
             setError('Lỗi kết nối. Vui lòng thử lại.');
         } finally {

@@ -77,12 +77,17 @@ export default function HubLayout({ children }: { children: React.ReactNode }) {
     const [authChecked, setAuthChecked] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
 
-    // Check auth state
+    // Check auth state — redirect to login if not authenticated
     useEffect(() => {
         fetch('/api/auth/me')
             .then(r => { if (!r.ok) throw new Error(); return r.json(); })
-            .then(d => { if (d.user) setUser(d.user); setAuthChecked(true); })
-            .catch(() => setAuthChecked(true));
+            .then(d => {
+                if (d.user) { setUser(d.user); setAuthChecked(true); }
+                else { window.location.href = '/login?callbackUrl=' + encodeURIComponent(window.location.pathname); }
+            })
+            .catch(() => {
+                window.location.href = '/login?callbackUrl=' + encodeURIComponent(window.location.pathname);
+            });
     }, []);
 
     const cycleTheme = () => {
@@ -97,6 +102,15 @@ export default function HubLayout({ children }: { children: React.ReactNode }) {
         setShowUserMenu(false);
         window.location.href = '/login';
     };
+
+    // Show loading while checking auth
+    if (!authChecked) {
+        return (
+            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)' }}>
+                <div className="loading-spinner" />
+            </div>
+        );
+    }
 
     const themeLabel = theme === 'dark' ? 'Tối' : theme === 'light' ? 'Sáng' : 'Tự động';
     const initials = user?.name ? user.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : '?';
@@ -141,29 +155,7 @@ export default function HubLayout({ children }: { children: React.ReactNode }) {
                         <ThemeIcon theme={theme} />
                     </button>
 
-                    {/* Auth buttons */}
-                    {authChecked && !user && (
-                        <>
-                            <Link href="/login" style={{
-                                padding: '7px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: 600,
-                                color: 'var(--text-secondary)', textDecoration: 'none',
-                                background: 'var(--bg-card)', border: '1px solid var(--border)',
-                                transition: 'all 200ms',
-                            }}>
-                                Đăng nhập
-                            </Link>
-                            <Link href="/signup" style={{
-                                padding: '7px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: 600,
-                                color: 'white', textDecoration: 'none',
-                                background: 'var(--accent-primary)', border: 'none',
-                                transition: 'all 200ms',
-                            }}>
-                                Đăng ký
-                            </Link>
-                        </>
-                    )}
-
-                    {/* User avatar + menu */}
+                    {/* User avatar + menu — always shown, user is always authenticated */}
                     {authChecked && user && (
                         <div style={{ position: 'relative' }}>
                             <button onClick={() => setShowUserMenu(!showUserMenu)} style={{

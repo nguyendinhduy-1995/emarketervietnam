@@ -77,24 +77,29 @@ export function middleware(req: NextRequest) {
 
     // Normalize localhost by removing port for easy checking
     const baseHostname = hostname.split(':')[0];
-    const isCrmSubdomain = baseHostname === 'crmspa.emarketervietnam.vn' || baseHostname === 'crmspa.localhost';
+    const isCrmSubdomain = baseHostname === 'crmspa.emarketervietnam.vn' || baseHostname === 'crmspa.localhost'
+        || baseHostname === 'crm.emarketervietnam.vn' || baseHostname === 'crm.localhost';
+    const isHubSubdomain = baseHostname === 'hub.emarketervietnam.vn' || baseHostname === 'hub.localhost';
+
+    // Hub subdomain — passes through as if it were the main domain
+    if (isHubSubdomain) {
+        return NextResponse.next();
+    }
 
     if (isCrmSubdomain) {
-        // If accessing root of subdomain, redirect to main hub
+        // If accessing root of subdomain, show CRM login
         if (url.pathname === '/') {
-            const hubHostname = process.env.NODE_ENV === 'production' ? 'emarketervietnam.vn' : 'localhost';
-            const hubPort = process.env.NODE_ENV === 'production' ? '' : ':3000';
-            const protocol = process.env.NODE_ENV === 'production' ? 'https://' : 'http://';
-            return NextResponse.redirect(`${protocol}${hubHostname}${hubPort}`);
+            url.pathname = '/emk-crm/login';
+            return NextResponse.rewrite(url);
         }
 
-        // Do not rewrite API routes or routes that are already rewritten
-        if (url.pathname.startsWith('/api') || url.pathname.startsWith('/crm/')) {
+        // Do not rewrite API routes or routes that already have the /emk-crm prefix
+        if (url.pathname.startsWith('/api') || url.pathname === '/emk-crm' || url.pathname.startsWith('/emk-crm/')) {
             return NextResponse.next();
         }
 
-        // Map /slug to /crm/slug internally
-        url.pathname = `/crm${url.pathname}`;
+        // Map /slug to /emk-crm/slug internally
+        url.pathname = `/emk-crm${url.pathname}`;
         return NextResponse.rewrite(url);
     }
 
@@ -103,9 +108,10 @@ export function middleware(req: NextRequest) {
     // The slug will be resolved to workspaceId by the route handler via Prisma
     const baseDomain = process.env.NODE_ENV === 'production' ? 'emarketervietnam.vn' : 'localhost';
     const hostParts = baseHostname.split('.');
+    const reservedSubdomains = ['www', 'crmspa', 'crm', 'hub'];
     if (hostParts.length > 1 || (process.env.NODE_ENV !== 'production' && baseHostname !== 'localhost')) {
         const potentialSlug = hostParts[0];
-        if (potentialSlug && potentialSlug !== 'www' && potentialSlug !== 'crmspa' && potentialSlug !== baseDomain) {
+        if (potentialSlug && !reservedSubdomains.includes(potentialSlug) && potentialSlug !== baseDomain) {
             // Inject tenant slug header for downstream resolution
             const response = NextResponse.next();
             response.headers.set('x-tenant-slug', potentialSlug);

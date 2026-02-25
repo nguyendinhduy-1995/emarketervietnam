@@ -21,7 +21,7 @@ type Tab = 'products' | 'categories';
 const TYPE_META: Record<string, { label: string; icon: string; color: string }> = {
     CRM: { label: 'CRM', icon: '🏢', color: '#6366f1' },
     APP: { label: 'App', icon: '📱', color: '#f59e0b' },
-    DIGITAL: { label: 'Số', icon: '📥', color: '#10b981' },
+    DIGITAL: { label: 'Sản Phẩm Số', icon: '📥', color: '#10b981' },
 };
 const BILLING_META: Record<string, string> = { SUBSCRIPTION: 'Thuê bao', PAYG: 'Trả/lượt', ONE_TIME: '1 lần', MIXED: 'Kết hợp' };
 const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
@@ -210,132 +210,207 @@ export default function CrmProductsPage() {
                         + Thêm sản phẩm
                     </button>
 
-                    {/* Product Form */}
+                    {/* Product Form — Full-screen overlay */}
                     {showForm && (
-                        <div className="card" style={{ marginBottom: '12px', padding: '14px' }}>
-                            <h3 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '10px' }}>
-                                {editId ? '✏️ Sửa sản phẩm' : '➕ Thêm sản phẩm'}
-                            </h3>
-
-                            {/* Type selector */}
-                            <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
-                                {Object.entries(TYPE_META).map(([k, v]) => (
-                                    <button key={k} onClick={() => {
-                                        const billing = k === 'APP' ? 'PAYG' : k === 'DIGITAL' ? 'ONE_TIME' : 'SUBSCRIPTION';
-                                        setForm({ ...form, type: k, billingModel: billing });
-                                    }} style={{
-                                        flex: 1, padding: '8px', borderRadius: '10px', fontSize: '12px', fontWeight: 700,
-                                        border: '2px solid', cursor: 'pointer',
-                                        borderColor: form.type === k ? v.color : 'var(--border)',
-                                        background: form.type === k ? v.color : 'transparent',
-                                        color: form.type === k ? '#fff' : 'var(--text-primary)',
-                                    }}>
-                                        {v.icon} {v.label}
-                                    </button>
-                                ))}
-                            </div>
-
-                            {/* Billing model */}
-                            <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
-                                {Object.entries(BILLING_META).map(([k, label]) => (
-                                    <button key={k} onClick={() => setForm({ ...form, billingModel: k })} style={{
-                                        flex: 1, padding: '6px', borderRadius: '8px', fontSize: '10px', fontWeight: 600,
-                                        border: '1px solid', cursor: 'pointer',
-                                        borderColor: form.billingModel === k ? 'var(--accent-primary)' : 'var(--border)',
-                                        background: form.billingModel === k ? 'rgba(99,102,241,0.1)' : 'transparent',
-                                        color: form.billingModel === k ? 'var(--accent-primary)' : 'var(--text-muted)',
-                                    }}>{label}</button>
-                                ))}
-                            </div>
-
-                            <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                                <input placeholder="Tên sản phẩm *" value={form.name}
-                                    onChange={e => setForm({ ...form, name: e.target.value })}
-                                    className="emk-input" style={{ flex: 1 }} />
-                                <input placeholder="Icon" value={form.icon}
-                                    onChange={e => setForm({ ...form, icon: e.target.value })}
-                                    className="emk-input" style={{ width: '50px', textAlign: 'center', fontSize: '16px' }} />
-                            </div>
-
-                            <input placeholder="Mô tả ngắn" value={form.tagline}
-                                onChange={e => setForm({ ...form, tagline: e.target.value })}
-                                className="emk-input" style={{ width: '100%', marginBottom: '8px' }} />
-
-                            {/* Prices row */}
-                            <div style={{ display: 'flex', gap: '6px', marginBottom: '8px' }}>
-                                {form.billingModel !== 'PAYG' && (
-                                    <div style={{ flex: 1 }}>
-                                        <label style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Giá gốc</label>
-                                        <input type="number" value={form.priceOriginal}
-                                            onChange={e => setForm({ ...form, priceOriginal: e.target.value })}
-                                            className="emk-input" style={{ width: '100%' }} />
+                        <>
+                            {/* Scoped animation */}
+                            <style>{`
+                                @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+                                .pf-overlay { position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); display: flex; align-items: flex-start; justify-content: center; overflow-y: auto; padding: 40px 16px; }
+                                .pf-modal { width: 100%; max-width: 580px; background: var(--bg-card); border-radius: 24px; border: 1px solid var(--border); box-shadow: 0 24px 80px rgba(0,0,0,0.25); animation: slideUp 0.3s ease-out; }
+                                .pf-section { padding: 20px 24px; border-bottom: 1px solid var(--border); }
+                                .pf-section:last-child { border-bottom: none; }
+                                .pf-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; letter-spacing: 0.3px; }
+                                .pf-input { width: 100%; padding: 12px 16px; border-radius: 12px; background: var(--bg-primary); border: 1.5px solid var(--border); color: var(--text-primary); font-size: 14px; font-family: inherit; outline: none; box-sizing: border-box; transition: border-color 0.2s, box-shadow 0.2s; }
+                                .pf-input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.12); }
+                                .pf-input::placeholder { color: var(--text-muted); }
+                                .pf-textarea { width: 100%; padding: 12px 16px; border-radius: 12px; background: var(--bg-primary); border: 1.5px solid var(--border); color: var(--text-primary); font-size: 13px; font-family: inherit; outline: none; box-sizing: border-box; min-height: 80px; resize: vertical; transition: border-color 0.2s, box-shadow 0.2s; }
+                                .pf-textarea:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.12); }
+                                .pf-type-btn { flex: 1; padding: 14px 8px; border-radius: 14px; border: 2px solid var(--border); background: transparent; cursor: pointer; text-align: center; transition: all 0.2s ease; font-family: inherit; }
+                                .pf-type-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+                                .pf-billing-btn { flex: 1; padding: 10px 6px; border-radius: 10px; border: 1.5px solid var(--border); background: transparent; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.15s ease; font-family: inherit; color: var(--text-muted); }
+                                @media (max-width: 768px) { .pf-overlay { padding: 16px 8px; } .pf-section { padding: 16px; } }
+                            `}</style>
+                            <div className="pf-overlay" onClick={() => { setShowForm(false); setEditId(null); }}>
+                                <div className="pf-modal" onClick={e => e.stopPropagation()}>
+                                    {/* Modal Header */}
+                                    <div className="pf-section" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                        <div>
+                                            <h2 style={{ fontSize: '20px', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                {editId ? '✏️' : '✨'} {editId ? 'Sửa sản phẩm' : 'Tạo sản phẩm mới'}
+                                            </h2>
+                                            <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '4px 0 0' }}>
+                                                {editId ? 'Cập nhật thông tin sản phẩm' : 'Thêm sản phẩm mới vào hệ thống'}
+                                            </p>
+                                        </div>
+                                        <button onClick={() => { setShowForm(false); setEditId(null); }} style={{
+                                            width: '36px', height: '36px', borderRadius: '10px',
+                                            background: 'var(--bg-primary)', border: '1px solid var(--border)',
+                                            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            fontSize: '16px', color: 'var(--text-muted)', transition: 'all 0.15s ease',
+                                        }}>✕</button>
                                     </div>
-                                )}
-                                {(form.billingModel === 'SUBSCRIPTION' || form.billingModel === 'MIXED') && (
-                                    <div style={{ flex: 1 }}>
-                                        <label style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Thuê/tháng</label>
-                                        <input type="number" value={form.priceRental}
-                                            onChange={e => setForm({ ...form, priceRental: e.target.value })}
-                                            className="emk-input" style={{ width: '100%' }} />
-                                    </div>
-                                )}
-                                {form.billingModel !== 'PAYG' && (
-                                    <div style={{ flex: 1 }}>
-                                        <label style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Giá bán</label>
-                                        <input type="number" value={form.priceSale}
-                                            onChange={e => setForm({ ...form, priceSale: e.target.value })}
-                                            className="emk-input" style={{ width: '100%' }} />
-                                    </div>
-                                )}
-                                {form.billingModel === 'PAYG' && (
-                                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', padding: '8px' }}>
-                                        💡 PAYG: Giá theo lượt. Tạo sản phẩm trước, rồi thêm đơn vị tính ở phần chi tiết.
-                                    </p>
-                                )}
-                            </div>
 
-                            {/* Category chips */}
-                            {categories.length > 0 && (
-                                <div style={{ marginBottom: '8px' }}>
-                                    <label style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Danh mục</label>
-                                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '4px' }}>
-                                        {categories.map(c => {
-                                            const a = form.industry.includes(c.slug);
-                                            return (
-                                                <button key={c.id} onClick={() => setForm({
-                                                    ...form, industry: a ? form.industry.filter(i => i !== c.slug) : [...form.industry, c.slug]
-                                                })} style={{
-                                                    padding: '4px 10px', borderRadius: '14px', fontSize: '11px', fontWeight: 600,
-                                                    border: '1.5px solid', cursor: 'pointer',
-                                                    borderColor: a ? 'var(--accent-primary)' : 'var(--border)',
-                                                    background: a ? 'var(--accent-primary)' : 'transparent',
-                                                    color: a ? '#fff' : 'var(--text-primary)',
-                                                }}>{c.icon} {c.name}</button>
-                                            );
-                                        })}
+                                    {/* Section 1: Product Type */}
+                                    <div className="pf-section">
+                                        <label className="pf-label">Loại sản phẩm</label>
+                                        <div style={{ display: 'flex', gap: '10px' }}>
+                                            {Object.entries(TYPE_META).map(([k, v]) => {
+                                                const isActive = form.type === k;
+                                                return (
+                                                    <button key={k} className="pf-type-btn" onClick={() => {
+                                                        const billing = k === 'APP' ? 'PAYG' : k === 'DIGITAL' ? 'ONE_TIME' : 'SUBSCRIPTION';
+                                                        setForm({ ...form, type: k, billingModel: billing });
+                                                    }} style={{
+                                                        borderColor: isActive ? v.color : undefined,
+                                                        background: isActive ? `${v.color}12` : undefined,
+                                                        transform: isActive ? 'translateY(-2px)' : undefined,
+                                                        boxShadow: isActive ? `0 4px 16px ${v.color}30` : undefined,
+                                                    }}>
+                                                        <div style={{ fontSize: '28px', marginBottom: '6px' }}>{v.icon}</div>
+                                                        <div style={{ fontSize: '13px', fontWeight: 700, color: isActive ? v.color : 'var(--text-primary)' }}>{v.label}</div>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Section 2: Basic Info */}
+                                    <div className="pf-section">
+                                        <label className="pf-label">Thông tin cơ bản</label>
+                                        <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
+                                            <div style={{
+                                                width: '56px', height: '56px', borderRadius: '14px', flexShrink: 0,
+                                                background: 'var(--bg-primary)', border: '1.5px solid var(--border)',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                position: 'relative', overflow: 'hidden',
+                                            }}>
+                                                <span style={{ fontSize: '28px' }}>{form.icon || '📦'}</span>
+                                                <input value={form.icon} onChange={e => setForm({ ...form, icon: e.target.value })}
+                                                    style={{
+                                                        position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer',
+                                                        fontSize: '28px', textAlign: 'center',
+                                                    }} title="Nhấn để đổi icon" />
+                                            </div>
+                                            <div style={{ flex: 1 }}>
+                                                <input className="pf-input" placeholder="Tên sản phẩm *"
+                                                    value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
+                                                    autoFocus style={{ marginBottom: '8px', fontWeight: 600, fontSize: '16px' }} />
+                                                <input className="pf-input" placeholder="Mô tả ngắn (VD: CRM quản lý spa thông minh)"
+                                                    value={form.tagline} onChange={e => setForm({ ...form, tagline: e.target.value })} />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Section 3: Billing & Pricing */}
+                                    <div className="pf-section">
+                                        <label className="pf-label">Mô hình tính phí & Giá</label>
+                                        <div style={{ display: 'flex', gap: '6px', marginBottom: '16px' }}>
+                                            {Object.entries(BILLING_META).map(([k, label]) => {
+                                                const isActive = form.billingModel === k;
+                                                return (
+                                                    <button key={k} className="pf-billing-btn" onClick={() => setForm({ ...form, billingModel: k })} style={{
+                                                        borderColor: isActive ? 'var(--accent-primary)' : undefined,
+                                                        background: isActive ? 'rgba(99,102,241,0.08)' : undefined,
+                                                        color: isActive ? 'var(--accent-primary)' : undefined,
+                                                        fontWeight: isActive ? 700 : undefined,
+                                                    }}>{label}</button>
+                                                );
+                                            })}
+                                        </div>
+
+                                        {form.billingModel === 'PAYG' ? (
+                                            <div style={{
+                                                padding: '14px 16px', borderRadius: '12px',
+                                                background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)',
+                                                fontSize: '13px', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '8px',
+                                            }}>
+                                                <span style={{ fontSize: '18px' }}>💡</span>
+                                                <span>Giá PAYG: tạo sản phẩm trước, sau đó thêm đơn vị tính phí ở phần chi tiết.</span>
+                                            </div>
+                                        ) : (
+                                            <div style={{ display: 'grid', gridTemplateColumns: form.billingModel === 'SUBSCRIPTION' || form.billingModel === 'MIXED' ? '1fr 1fr 1fr' : '1fr 1fr', gap: '10px' }}>
+                                                <div>
+                                                    <label className="pf-label" style={{ fontSize: '11px' }}>Giá gốc (VND)</label>
+                                                    <input className="pf-input" type="number" placeholder="0"
+                                                        value={form.priceOriginal} onChange={e => setForm({ ...form, priceOriginal: e.target.value })} />
+                                                </div>
+                                                {(form.billingModel === 'SUBSCRIPTION' || form.billingModel === 'MIXED') && (
+                                                    <div>
+                                                        <label className="pf-label" style={{ fontSize: '11px' }}>Thuê/tháng (VND)</label>
+                                                        <input className="pf-input" type="number" placeholder="0"
+                                                            value={form.priceRental} onChange={e => setForm({ ...form, priceRental: e.target.value })} />
+                                                    </div>
+                                                )}
+                                                <div>
+                                                    <label className="pf-label" style={{ fontSize: '11px' }}>Giá bán (VND)</label>
+                                                    <input className="pf-input" type="number" placeholder="0"
+                                                        value={form.priceSale} onChange={e => setForm({ ...form, priceSale: e.target.value })} />
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Section 4: Categories & Details */}
+                                    <div className="pf-section">
+                                        {categories.length > 0 && (
+                                            <div style={{ marginBottom: '16px' }}>
+                                                <label className="pf-label">Danh mục</label>
+                                                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                                    {categories.map(c => {
+                                                        const a = form.industry.includes(c.slug);
+                                                        return (
+                                                            <button key={c.id} onClick={() => setForm({
+                                                                ...form, industry: a ? form.industry.filter(i => i !== c.slug) : [...form.industry, c.slug]
+                                                            })} style={{
+                                                                padding: '6px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 600,
+                                                                border: '1.5px solid', cursor: 'pointer', transition: 'all 0.15s ease',
+                                                                fontFamily: 'inherit',
+                                                                borderColor: a ? 'var(--accent-primary)' : 'var(--border)',
+                                                                background: a ? 'var(--accent-primary)' : 'transparent',
+                                                                color: a ? '#fff' : 'var(--text-secondary)',
+                                                            }}>{c.icon} {c.name}</button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div style={{ marginBottom: '12px' }}>
+                                            <label className="pf-label">Mô tả chi tiết</label>
+                                            <textarea className="pf-textarea" placeholder="Mô tả đầy đủ về sản phẩm, tính năng nổi bật..."
+                                                value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
+                                        </div>
+
+                                        <div>
+                                            <label className="pf-label">Hướng dẫn sử dụng</label>
+                                            <textarea className="pf-textarea" placeholder="Các bước để bắt đầu sử dụng sản phẩm..."
+                                                value={form.usageGuide} onChange={e => setForm({ ...form, usageGuide: e.target.value })} />
+                                        </div>
+                                    </div>
+
+                                    {/* Section 5: Actions */}
+                                    <div className="pf-section" style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                                        <button onClick={() => { setShowForm(false); setEditId(null); }} style={{
+                                            padding: '12px 24px', borderRadius: '12px', fontSize: '14px', fontWeight: 600,
+                                            background: 'var(--bg-primary)', border: '1.5px solid var(--border)',
+                                            cursor: 'pointer', color: 'var(--text-secondary)', fontFamily: 'inherit',
+                                            transition: 'all 0.15s ease',
+                                        }}>Huỷ</button>
+                                        <button onClick={save} disabled={saving || !form.name} style={{
+                                            padding: '12px 32px', borderRadius: '12px', fontSize: '14px', fontWeight: 700,
+                                            background: saving || !form.name ? 'var(--bg-hover)' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                                            color: saving || !form.name ? 'var(--text-muted)' : '#fff',
+                                            border: 'none', cursor: saving || !form.name ? 'not-allowed' : 'pointer',
+                                            fontFamily: 'inherit', transition: 'all 0.2s ease',
+                                            boxShadow: saving || !form.name ? 'none' : '0 4px 16px rgba(99,102,241,0.3)',
+                                        }}>
+                                            {saving ? '⏳ Đang lưu...' : editId ? '✓ Cập nhật' : '✓ Tạo sản phẩm'}
+                                        </button>
                                     </div>
                                 </div>
-                            )}
-
-                            <textarea placeholder="Mô tả chi tiết..." value={form.description}
-                                onChange={e => setForm({ ...form, description: e.target.value })}
-                                className="emk-input" style={{ width: '100%', minHeight: '60px', marginBottom: '8px', resize: 'vertical' }} />
-
-                            <textarea placeholder="Hướng dẫn sử dụng..." value={form.usageGuide}
-                                onChange={e => setForm({ ...form, usageGuide: e.target.value })}
-                                className="emk-input" style={{ width: '100%', minHeight: '60px', marginBottom: '10px', resize: 'vertical' }} />
-
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                                <button onClick={save} disabled={saving || !form.name} className="emk-btn-primary"
-                                    style={{ padding: '9px 18px', borderRadius: '10px', fontWeight: 700, fontSize: '12px', opacity: saving || !form.name ? 0.5 : 1 }}>
-                                    {saving ? '⏳...' : editId ? '✓ Cập nhật' : '✓ Tạo sản phẩm'}
-                                </button>
-                                <button onClick={() => { setShowForm(false); setEditId(null); }}
-                                    style={{ padding: '9px 14px', borderRadius: '10px', background: 'var(--bg-card)', border: '1px solid var(--border)', cursor: 'pointer', fontSize: '12px' }}>
-                                    ✕ Huỷ
-                                </button>
                             </div>
-                        </div>
+                        </>
                     )}
 
                     {/* Product list */}

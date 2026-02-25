@@ -7,7 +7,7 @@ import { generateUniqueSlug } from '@/lib/slug';
 
 
 const signupSchema = z.object({
-    workspaceName: z.string().min(2).max(100),
+    workspaceName: z.string().min(2).max(100).optional(),
     phone: z.string().min(9).max(15),
     password: z.string().min(6),
     name: z.string().min(2).max(100),
@@ -19,6 +19,8 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const data = signupSchema.parse(body);
 
+        // Auto-generate workspace name from user name if not provided
+        const workspaceName = data.workspaceName || `Workspace của ${data.name}`;
         // Normalize phone
         const normalizedPhone = data.phone.replace(/[\s\-]/g, '');
 
@@ -47,7 +49,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Generate unique slug
-        const slug = await generateUniqueSlug(data.workspaceName);
+        const slug = await generateUniqueSlug(workspaceName);
 
         // Hash password
         const passwordHash = await hashPassword(data.password);
@@ -67,7 +69,7 @@ export async function POST(req: NextRequest) {
             // 2. Create Org
             const org = await tx.org.create({
                 data: {
-                    name: data.workspaceName,
+                    name: workspaceName,
                     ownerUserId: user.id,
                 },
             });
@@ -76,7 +78,7 @@ export async function POST(req: NextRequest) {
             const workspace = await tx.workspace.create({
                 data: {
                     orgId: org.id,
-                    name: data.workspaceName,
+                    name: workspaceName,
                     slug,
                     product: 'SPA',
                 },

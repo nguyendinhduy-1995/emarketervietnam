@@ -75,13 +75,18 @@ export default function EmkCrmLayout({ children }: { children: React.ReactNode }
     const [user, setUser] = useState<AuthUser | null>(null);
     const [authChecked, setAuthChecked] = useState(false);
 
-    // Check CRM auth state
+    // Check CRM auth state — redirect to login if not authenticated
     useEffect(() => {
         if (pathname === '/emk-crm/login') { setAuthChecked(true); return; }
         fetch('/api/emk-crm/auth/me')
             .then(r => { if (!r.ok) throw new Error(); return r.json(); })
-            .then(d => { if (d.user) setUser(d.user); setAuthChecked(true); })
-            .catch(() => setAuthChecked(true));
+            .then(d => {
+                if (d.user) { setUser(d.user); setAuthChecked(true); }
+                else { window.location.href = '/emk-crm/login'; }
+            })
+            .catch(() => {
+                window.location.href = '/emk-crm/login';
+            });
     }, [pathname]);
 
     // Animate menu open/close
@@ -105,6 +110,15 @@ export default function EmkCrmLayout({ children }: { children: React.ReactNode }
     // CRM login page renders without layout chrome
     if (pathname === '/emk-crm/login') {
         return <>{children}</>;
+    }
+
+    // Show loading while checking auth
+    if (!authChecked) {
+        return (
+            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)' }}>
+                <div className="loading-spinner" />
+            </div>
+        );
     }
 
     const initials = user?.name ? user.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : '?';

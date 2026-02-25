@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { getSession } from '@/lib/auth/jwt';
+import { getSession, getCrmSession } from '@/lib/auth/jwt';
 import { platformDb } from '@/lib/db/platform';
 
 interface LayerStats {
@@ -18,7 +18,7 @@ interface LayerStats {
 
 // GET /api/emk-crm/analytics?days=30&layer=all|landing|hub
 export async function GET(req: NextRequest) {
-    const session = await getSession();
+    const session = await getSession() || await getCrmSession();
     if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const url = new URL(req.url);

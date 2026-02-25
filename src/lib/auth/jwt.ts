@@ -47,6 +47,7 @@ export async function setSessionCookie(token: string) {
         sameSite: 'lax',
         maxAge: 7 * 24 * 60 * 60, // 7 days
         path: '/',
+        ...(process.env.NODE_ENV === 'production' ? { domain: '.emarketervietnam.vn' } : {}),
     });
 }
 
@@ -72,6 +73,7 @@ export async function setCrmSessionCookie(token: string) {
         sameSite: 'lax',
         maxAge: 7 * 24 * 60 * 60,
         path: '/',
+        ...(process.env.NODE_ENV === 'production' ? { domain: '.emarketervietnam.vn' } : {}),
     });
 }
 

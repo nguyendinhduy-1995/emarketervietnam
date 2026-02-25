@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { platformDb as db } from '@/lib/db/platform';
 import { getAnySession } from '@/lib/auth/jwt';
-
+import { OrderStatus } from '@/lib/order-status';
 import crypto from 'crypto';
 
 // Hub Checkout: Product → Coupon → Order → Wallet Debit → Entitlement → Receipt → Notify
@@ -13,8 +13,11 @@ export async function POST(req: NextRequest) {
     const userId = session.userId;
 
     const body = await req.json();
-    const { productId, planId, source, couponCode, idempotencyKey } = body;
+    const { productId, planId, source, couponCode, idempotencyKey, domain, businessName, adminEmail, cycle } = body;
     if (!productId) return NextResponse.json({ error: 'productId là bắt buộc' }, { status: 400 });
+
+    // CRM products require domain
+    const isCrmProduct = false; // will be set below after product fetch
 
     // Idempotency check
     const idemKey = idempotencyKey || `checkout_${userId}_${productId}_${Date.now()}`;
@@ -32,10 +35,20 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Sản phẩm không tồn tại hoặc chưa công bố' }, { status: 404 });
     }
 
+    const isCrm = product.type === 'CRM';
+    if (isCrm && !domain) {
+        return NextResponse.json({ error: 'Domain là bắt buộc cho sản phẩm CRM' }, { status: 400 });
+    }
+
     // 2. Determine price
     let totalAmount = 0;
-    if (product.billingModel === 'SUBSCRIPTION') totalAmount = product.priceRental || product.priceMonthly;
-    else if (product.billingModel === 'ONE_TIME') totalAmount = product.priceSale || product.priceOriginal;
+    const billingCycle = cycle || 'MONTHLY';
+    if (product.billingModel === 'SUBSCRIPTION') {
+        const monthlyPrice = product.priceRental || product.priceMonthly;
+        totalAmount = billingCycle === 'YEARLY' ? monthlyPrice * 12 * 0.8 : monthlyPrice; // 20% discount for yearly
+    } else if (product.billingModel === 'ONE_TIME') {
+        totalAmount = product.priceSale || product.priceOriginal;
+    }
 
     // 3. Apply coupon
     let discountAmount = 0;
@@ -84,17 +97,22 @@ export async function POST(req: NextRequest) {
     const orgId = workspace?.orgId || null;
 
     // 6. Atomic transaction
+    // Determine order status based on product type
+    const orderStatus = isCrm ? OrderStatus.PAID_WAITING_DOMAIN_VERIFY : OrderStatus.PAID;
+
     const result = await db.$transaction(async (tx) => {
         // Create order with idempotency
         const order = await tx.commerceOrder.create({
             data: {
-                userId, orgId, source: source || 'HUB', status: 'PAID',
+                userId, orgId, workspaceId: workspace?.id, source: source || 'HUB', status: orderStatus,
                 totalAmount, discountAmount, couponId, idempotencyKey: idemKey,
+                note: isCrm ? JSON.stringify({ domain, businessName, adminEmail, cycle: billingCycle }) : null,
                 items: {
                     create: {
                         productId, planId: planId || null, quantity: 1,
                         unitPrice: totalAmount, lineTotal: chargeAmount,
-                        priceSnapshot: { unitPrice: totalAmount, billing: product.billingModel, version: 1 },
+                        priceSnapshot: { unitPrice: totalAmount, billing: product.billingModel, cycle: billingCycle, version: 1 },
+                        meta: isCrm ? { domain, businessName, adminEmail } : undefined,
                     },
                 },
             },
@@ -152,23 +170,54 @@ export async function POST(req: NextRequest) {
             await tx.entitlement.create({
                 data: {
                     workspaceId: workspace.id, userId, productId, moduleKey: product.key,
-                    scope: product.type === 'CRM' ? 'TENANT' : 'USER', status: 'ACTIVE',
-                    meta: { orderId: order.id, productType: product.type },
+                    scope: isCrm ? 'TENANT' : 'USER',
+                    status: isCrm ? 'PENDING' : 'ACTIVE', // CRM entitlements activate after deploy
+                    meta: { orderId: order.id, productType: product.type, domain: isCrm ? domain : undefined },
+                },
+            });
+        }
+
+        // CRM: create DNS verification + CRM instance records
+        if (isCrm && workspace) {
+            const normalizedDomain = domain.toLowerCase().trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
+            const verifyToken = `emk-verify-${crypto.randomBytes(16).toString('hex')}`;
+            const expiresAt = new Date(Date.now() + 72 * 3600_000); // 72h
+
+            await tx.dnsVerification.upsert({
+                where: { workspaceId_domain: { workspaceId: workspace.id, domain: normalizedDomain } },
+                create: {
+                    workspaceId: workspace.id, domain: normalizedDomain,
+                    verifyToken, status: 'PENDING', expiresAt,
+                },
+                update: {
+                    verifyToken, status: 'PENDING', attempts: 0, expiresAt, verifiedAt: null,
                 },
             });
 
-            // CRM post-purchase: notify user to set up DNS for their domain
-            if (product.type === 'CRM') {
-                await tx.notificationQueue.create({
-                    data: {
-                        userId, workspaceId: workspace.id,
-                        type: 'ENTITLEMENT_GRANTED',
-                        title: '🚀 Thiết lập CRM — Bước tiếp theo',
-                        body: 'Vào Cài đặt > Domain để kết nối tên miền riêng và triển khai CRM của bạn.',
-                        referenceType: 'ORDER', referenceId: order.id,
-                    },
-                });
-            }
+            await tx.crmInstance.upsert({
+                where: { workspaceId: workspace.id },
+                create: {
+                    workspaceId: workspace.id, domain: normalizedDomain,
+                    dbName: `crm_${workspace.id.replace(/-/g, '_').slice(0, 20)}`,
+                    adminUserId: userId, status: 'PENDING',
+                    deployLog: { orderId: order.id, businessName, adminEmail },
+                },
+                update: {
+                    domain: normalizedDomain, status: 'PENDING',
+                    deployLog: { orderId: order.id, businessName, adminEmail },
+                },
+            });
+
+            // Notification: guide user to DNS setup
+            await tx.notificationQueue.create({
+                data: {
+                    userId, workspaceId: workspace.id,
+                    type: 'ENTITLEMENT_GRANTED',
+                    title: '🌐 Cài đặt domain — Bước tiếp theo',
+                    body: `Truy cập trang cài đặt để cấu hình DNS cho ${normalizedDomain} và triển khai CRM.`,
+                    referenceType: 'ORDER', referenceId: order.id,
+                },
+            });
         }
 
         // Subscription with trial
@@ -244,5 +293,7 @@ export async function POST(req: NextRequest) {
         ok: true, order: result, message: `Mua "${product.name}" thành công!`,
         productType: product.type, deliveryMethod: product.deliveryMethod,
         charged: chargeAmount, discount: discountAmount,
+        // CRM-specific: redirect to setup page
+        ...(isCrm ? { setupUrl: `/hub/setup/${result.id}`, status: orderStatus } : {}),
     }, { status: 201 });
 }
