@@ -22,7 +22,7 @@ export function getCachedSnapshot() {
 }
 
 export async function POST(req: NextRequest) {
-    const hubSignature = req.headers.get('x-hub-signature');
+    const _hubSignature = req.headers.get('x-hub-signature');
     const hubAlgo = req.headers.get('x-hub-algorithm') || 'hmac-sha256';
 
     const body = await req.json();

@@ -23,7 +23,6 @@ export default function WalletTopupPage() {
     const [loading, setLoading] = useState(true);
     const [amount, setAmount] = useState(100000);
     const [customAmount, setCustomAmount] = useState('');
-    const [transferring, setTransferring] = useState(false);
     const [showQR, setShowQR] = useState(false);
     const [uploading, setUploading] = useState(false);
 

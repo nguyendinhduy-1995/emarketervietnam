@@ -5,7 +5,7 @@ import { platformDb } from '@/lib/db/platform';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
     const session = await getSession();
     if (!session) return Response.json({ error: 'Chưa đăng nhập' }, { status: 401 });
 

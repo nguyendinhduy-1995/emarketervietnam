@@ -66,7 +66,9 @@ export async function POST(req: NextRequest) {
 
         // 3. Simulated sending (In production, replace with Nodemailer or SMS Gateway)
         const magicLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/login?token=${token}`;
-        console.log(`[MAGIC LINK FOR ${contact}]: \n\n${magicLink}\n\n`);
+        if (process.env.NODE_ENV === 'development') {
+            console.log(`[MAGIC LINK FOR ${contact}]: \n\n${magicLink}\n\n`);
+        }
 
         return NextResponse.json({
             message: 'Đã gửi liên kết đăng nhập. Kiểm tra console trong môi trường dev.',

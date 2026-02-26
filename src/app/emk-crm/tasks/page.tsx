@@ -66,7 +66,7 @@ export default function TasksPage() {
     };
 
     const toggleSelect = (id: string) => {
-        setSelected(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
+        setSelected(prev => { const s = new Set(prev); if (s.has(id)) { s.delete(id); } else { s.add(id); } return s; });
     };
 
     // Calendar helpers
@@ -242,7 +242,7 @@ export default function TasksPage() {
                         {calDays.map((d, i) => {
                             const dayTasks = d.date ? tasksByDate.get(d.date) || [] : [];
                             const isToday = d.date === today;
-                            const hasOverdue = dayTasks.some(t => d.date < today);
+                            const hasOverdue = dayTasks.length > 0 && d.date < today;
                             return (
                                 <div key={i} style={{
                                     minHeight: '48px', padding: '4px', borderRadius: '8px',

@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import RegisterForm from '@/components/RegisterForm';
 import type { LandingConfig } from '@/lib/landing-config';
 
@@ -8,9 +9,9 @@ export default function LandingTemplate({ config }: { config: LandingConfig }) {
             {/* Top Bar */}
             <nav className="sticky top-0 z-50 px-4 py-3 flex items-center justify-between"
                 style={{ background: 'var(--bg-glass)', backdropFilter: 'blur(12px)', borderBottom: '1px solid var(--border)' }}>
-                <a href="/" className="font-bold text-lg" style={{ color: 'var(--accent-primary)' }}>eMarketer</a>
-                <a href="/login" className="text-sm font-medium px-4 py-2 rounded-lg transition-colors"
-                    style={{ color: 'var(--text-secondary)' }}>Đăng nhập</a>
+                <Link href="/" className="font-bold text-lg" style={{ color: 'var(--accent-primary)' }}>eMarketer</Link>
+                <Link href="/login" className="text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                    style={{ color: 'var(--text-secondary)' }}>Đăng nhập</Link>
             </nav>
 
             {/* Hero */}

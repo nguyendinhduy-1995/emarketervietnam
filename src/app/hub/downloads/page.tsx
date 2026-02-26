@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 
 interface DownloadGrant { id: string; productId: string; assetId: string; maxDownloads: number; downloadCount: number; licenseKey: string | null; expiresAt: string | null; revokedAt: string | null; createdAt: string; asset: { filename: string; size: number; mimeType: string }; }
 
@@ -39,7 +40,7 @@ export default function DownloadsPage() {
                 <div style={{ textAlign: 'center', padding: '40px', borderRadius: '16px', background: 'var(--bg-card)' }}>
                     <p style={{ fontSize: '32px', marginBottom: '8px' }}>📥</p>
                     <p style={{ fontWeight: 600 }}>Chưa có sản phẩm số</p>
-                    <a href="/hub/marketplace" style={{ color: 'var(--accent-primary)', fontWeight: 700, fontSize: '13px' }}>Khám phá Marketplace →</a>
+                    <Link href="/hub/marketplace" style={{ color: 'var(--accent-primary)', fontWeight: 700, fontSize: '13px' }}>Khám phá Marketplace →</Link>
                 </div>
             )}
 

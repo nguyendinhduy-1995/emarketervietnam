@@ -59,11 +59,12 @@ function track(event: string, properties: Record<string, unknown> = {}) {
 export default function AnalyticsTracker({ layer }: AnalyticsProps) {
     const pathname = usePathname();
     const prevPathRef = useRef<string>('');
-    const startTimeRef = useRef<number>(Date.now());
+    const startTimeRef = useRef<number>(0);
     const [enabled, setEnabled] = useState<boolean | null>(null);
 
     // Check if analytics is enabled for this layer
     useEffect(() => {
+        startTimeRef.current = Date.now();
         const key = layer === 'landing' ? 'analytics_landing' : 'analytics_hub';
         fetch(`/api/ai/settings?keys=${key}`)
             .then(r => r.json())

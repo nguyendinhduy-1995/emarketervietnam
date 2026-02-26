@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { useToast } from '@/components/ToastProvider';
-import { vnd } from '@/lib/format';
 
 interface Instance {
     id: string; workspaceId: string; domain: string;

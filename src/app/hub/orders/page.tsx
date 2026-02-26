@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { vnd } from '@/lib/format';
 
 interface Order { id: string; status: string; totalAmount: number; refundedAmount: number; discountAmount: number; createdAt: string; note: string | null; items: { productId: string; quantity: number; unitPrice: number; lineTotal: number; meta?: Record<string, unknown> }[]; }
@@ -53,7 +53,7 @@ export default function OrdersPage() {
                     <div style={{ textAlign: 'center', padding: '40px', borderRadius: '16px', background: 'var(--bg-card)' }}>
                         <p style={{ fontSize: '32px', marginBottom: '8px' }}>📦</p>
                         <p style={{ fontWeight: 600 }}>Chưa có đơn hàng</p>
-                        <a href="/hub/marketplace" style={{ color: 'var(--accent-primary)', fontWeight: 700, fontSize: '13px' }}>Khám phá Marketplace →</a>
+                        <Link href="/hub/marketplace" style={{ color: 'var(--accent-primary)', fontWeight: 700, fontSize: '13px' }}>Khám phá Marketplace →</Link>
                     </div>
                 ) : orders.map(o => {
                     const s = STATUS_MAP[o.status] || STATUS_MAP.PENDING;
@@ -75,13 +75,13 @@ export default function OrdersPage() {
                             {o.discountAmount > 0 && <div style={{ fontSize: '10px', color: '#059669', textAlign: 'right' }}>Giảm {vnd(o.discountAmount)}</div>}
                             {o.refundedAmount > 0 && <div style={{ fontSize: '10px', color: '#dc2626', textAlign: 'right' }}>↩️ Hoàn {vnd(o.refundedAmount)}</div>}
                             {isCrmSetup && (
-                                <a href={`/hub/setup/${o.id}`} style={{
+                                <Link href={`/hub/setup/${o.id}`} style={{
                                     display: 'block', textAlign: 'center', marginTop: '8px',
                                     padding: '8px', borderRadius: '8px', fontSize: '12px', fontWeight: 700,
                                     background: 'var(--accent-primary)', color: 'white', textDecoration: 'none',
                                 }}>
                                     🔧 Tiếp tục cài đặt →
-                                </a>
+                                </Link>
                             )}
                             {o.status === 'DELIVERED_ACTIVE' && o.note && (() => {
                                 try {

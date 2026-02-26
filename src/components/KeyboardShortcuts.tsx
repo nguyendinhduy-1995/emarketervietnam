@@ -9,8 +9,7 @@ export default function KeyboardShortcuts() {
     const pathname = usePathname();
     const [showHelp, setShowHelp] = useState(false);
 
-    const isCRM = pathname?.startsWith('/emk-crm');
-    const isHub = pathname?.startsWith('/hub');
+
 
     const shortcuts: ShortcutDef[] = [
         // Global
@@ -40,7 +39,6 @@ export default function KeyboardShortcuts() {
 
         for (const s of shortcuts) {
             const metaMatch = s.meta ? (e.metaKey || e.ctrlKey) : !(e.metaKey || e.ctrlKey);
-            const shiftMatch = s.shift ? e.shiftKey : !e.shiftKey || s.key === '?';
             if (e.key.toLowerCase() === s.key.toLowerCase() && metaMatch && (s.shift ? e.shiftKey : true)) {
                 e.preventDefault();
                 s.action();

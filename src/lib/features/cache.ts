@@ -1,5 +1,5 @@
 import { platformDb } from '@/lib/db/platform';
-import { CORE_FEATURES, FEATURE_LABELS } from '@/lib/features/registry';
+import { CORE_FEATURES } from '@/lib/features/registry';
 
 /**
  * In-memory entitlement cache per workspace.

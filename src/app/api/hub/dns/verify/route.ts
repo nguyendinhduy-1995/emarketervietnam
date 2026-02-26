@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
 
     try {
         txtRecords = await dns.resolveTxt(txtHost);
-    } catch (err) {
+    } catch {
         // DNS lookup failed — domain likely doesn't have the TXT record yet
         await db.dnsVerification.update({
             where: { id: verificationId },

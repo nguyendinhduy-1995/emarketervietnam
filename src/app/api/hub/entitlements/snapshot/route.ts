@@ -128,7 +128,7 @@ export async function GET(req: NextRequest) {
     let signature: string;
     try {
         signature = signSnapshot(snapshot);
-    } catch (err) {
+    } catch {
         // Fallback HMAC if Ed25519 key not configured yet (migration period)
         const crypto = await import('crypto');
         const fallbackKey = process.env.ENTITLEMENT_SECRET || 'entitlement-signing-key';

@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { event, subscriptionId, workspaceId, data: eventData } = await req.json();
+    const { event, subscriptionId, data: eventData } = await req.json();
     if (!event || !subscriptionId) {
         return NextResponse.json({ error: 'event and subscriptionId required' }, { status: 400 });
     }

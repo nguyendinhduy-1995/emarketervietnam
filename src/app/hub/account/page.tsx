@@ -23,7 +23,6 @@ export default function AccountPage() {
     const [wallet, setWallet] = useState<WalletInfo | null>(null);
     const [sub, setSub] = useState<SubInfo | null>(null);
     const [user, setUser] = useState<UserInfo | null>(null);
-    const [userId, setUserId] = useState<string | null>(null);
     const [refData, setRefData] = useState<RewardData | null>(null);
     const [refLoading, setRefLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'overview' | 'wallet' | 'referrals' | 'settings'>('overview');
@@ -32,7 +31,6 @@ export default function AccountPage() {
         fetch('/api/hub/wallet').then(r => r.json()).then(d => setWallet(d)).catch(() => { });
         fetch('/api/hub/subscription').then(r => r.json()).then(d => setSub(d)).catch(() => { });
         fetch('/api/hub/profile').then(r => r.json()).then(d => setUser(d)).catch(() => { });
-        fetch('/api/auth/me').then(r => r.json()).then(d => { if (d.user?.id) setUserId(d.user.id); }).catch(() => { });
     }, []);
 
     const loadRefData = useCallback(() => {

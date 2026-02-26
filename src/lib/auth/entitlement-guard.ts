@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { platformDb } from '@/lib/db/platform';
-import { type TokenPayload } from '@/lib/auth/jwt';
 import { CORE_FEATURES, FEATURE_LABELS } from '@/lib/features/registry';
 
 /**

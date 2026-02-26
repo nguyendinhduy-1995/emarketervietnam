@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { platformDb } from '@/lib/db/platform';
 import { requirePlatformAdmin } from '@/lib/auth/emk-guard';
-import { logAdminAction, AuditAction } from '@/lib/audit';
+import { logAdminAction } from '@/lib/audit';
 
 // POST /api/hub/provision — Create new tenant (Org + Workspace + Admin user)
 export async function POST(req: NextRequest) {

@@ -1,6 +1,7 @@
 'use client';
 
 import { type ReactNode } from 'react';
+import Link from 'next/link';
 import { useEntitlement } from '@/hooks/useEntitlement';
 import { FEATURE_LABELS } from '@/lib/features/registry';
 
@@ -52,7 +53,7 @@ export function FeatureGate({ feature, children, fallback, hideWhenDisabled }: F
             <p style={{ color: 'var(--color-text-muted, #6b7280)', margin: '0 0 1rem', fontSize: '0.9rem' }}>
                 Tính năng này chưa được kích hoạt. Nâng cấp gói để sử dụng.
             </p>
-            <a
+            <Link
                 href="/hub/marketplace"
                 style={{
                     display: 'inline-block',
@@ -66,7 +67,7 @@ export function FeatureGate({ feature, children, fallback, hideWhenDisabled }: F
                 }}
             >
                 🛒 Xem Marketplace
-            </a>
+            </Link>
         </div>
     );
 }

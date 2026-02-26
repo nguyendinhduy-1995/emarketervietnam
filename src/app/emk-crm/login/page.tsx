@@ -1,10 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 
 export default function CrmLoginPage() {
-    const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [form, setForm] = useState({ phone: '', password: '' });

@@ -21,8 +21,7 @@ export async function POST(req: NextRequest) {
     const selectedAddons: string[] = Array.isArray(inputAddons) ? inputAddons : [];
     if (!productId) return NextResponse.json({ error: 'productId là bắt buộc' }, { status: 400 });
 
-    // CRM products require domain
-    const isCrmProduct = false; // will be set below after product fetch
+    // CRM products require domain — computed below after product fetch
 
     // Idempotency check
     const idemKey = idempotencyKey || `checkout_${userId}_${productId}_${Date.now()}`;

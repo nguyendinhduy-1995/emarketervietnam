@@ -9,7 +9,7 @@ export async function logEvent({
     workspaceId?: string;
     actorUserId?: string;
     type: string;
-    payload?: any;
+    payload?: Record<string, unknown>;
 }) {
     try {
         await prisma.eventLog.create({

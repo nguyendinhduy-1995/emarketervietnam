@@ -24,8 +24,6 @@ export default function SolutionSuggestion() {
 
     if (dismissed || suggestions.length === 0) return null;
 
-    const main = suggestions[0];
-
     return (
         <div style={{
             padding: '16px', borderRadius: '16px', marginBottom: '16px',

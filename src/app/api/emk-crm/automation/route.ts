@@ -59,7 +59,7 @@ const DEFAULT_RULES: AutomationRule[] = [
 ];
 
 // In-memory rules store
-let rules: AutomationRule[] = [...DEFAULT_RULES];
+const rules: AutomationRule[] = [...DEFAULT_RULES];
 
 // GET — list all rules
 export async function GET(req: NextRequest) {

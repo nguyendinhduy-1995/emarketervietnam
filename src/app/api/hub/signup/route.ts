@@ -7,7 +7,7 @@ import crypto from 'crypto';
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { name, phone, email, industry, size, need, landingSlug, utmSource, utmCampaign, utmMedium } = body;
+        const { name, phone, email, industry, landingSlug } = body;
 
         if (!name || (!phone && !email)) {
             return NextResponse.json({ error: 'Vui lòng nhập tên và số điện thoại hoặc email' }, { status: 400 });
