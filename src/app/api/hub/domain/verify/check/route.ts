@@ -93,7 +93,37 @@ export async function POST(req: NextRequest) {
         });
     }
 
-    // ── Both match → VERIFIED ──
+    // ── Both match → VERIFIED → Auto-deploy ──
+    const dbName = `crm_${workspaceId.replace(/-/g, '_').slice(0, 20)}`;
+
+    // Create or update CrmInstance
+    let instance = await db.crmInstance.findUnique({ where: { workspaceId } });
+    if (!instance) {
+        instance = await db.crmInstance.create({
+            data: {
+                workspaceId,
+                domain: normalizedDomain,
+                dbName,
+                adminUserId: session.userId,
+                status: 'DEPLOYING',
+                deployLog: { enqueuedAt: new Date().toISOString(), enqueuedBy: session.userId, trigger: 'AUTO_DNS_VERIFY' },
+            },
+        });
+    } else if (instance.status === 'PENDING' || instance.status === 'DNS_VERIFIED') {
+        instance = await db.crmInstance.update({
+            where: { id: instance.id },
+            data: {
+                status: 'DEPLOYING',
+                domain: normalizedDomain,
+                deployLog: {
+                    ...(instance.deployLog as Record<string, unknown> || {}),
+                    enqueuedAt: new Date().toISOString(),
+                    trigger: 'AUTO_DNS_VERIFY',
+                },
+            },
+        });
+    }
+
     await db.$transaction([
         // Update DNS verification
         db.dnsVerification.update({
@@ -101,13 +131,24 @@ export async function POST(req: NextRequest) {
             data: { status: 'VERIFIED', verifiedAt: new Date() },
         }),
 
-        // Update order status
+        // Skip DOMAIN_VERIFIED → go straight to DEPLOYING
         db.commerceOrder.updateMany({
             where: {
                 workspaceId,
                 status: OrderStatus.PAID_WAITING_DOMAIN_VERIFY,
             },
-            data: { status: OrderStatus.DOMAIN_VERIFIED },
+            data: { status: OrderStatus.DEPLOYING },
+        }),
+
+        // Bind entitlement to domain
+        db.entitlement.updateMany({
+            where: { workspaceId, moduleKey: 'CRM_CORE' },
+            data: {
+                meta: {
+                    boundDomain: normalizedDomain,
+                    boundInstanceId: instance.id,
+                },
+            },
         }),
 
         // Audit log
@@ -115,8 +156,8 @@ export async function POST(req: NextRequest) {
             data: {
                 workspaceId,
                 actorUserId: session.userId,
-                type: 'DOMAIN_VERIFIED',
-                payloadJson: { domain: normalizedDomain, txtMatch, aMatch },
+                type: 'DOMAIN_VERIFIED_AUTO_DEPLOY',
+                payloadJson: { domain: normalizedDomain, txtMatch, aMatch, instanceId: instance.id },
             },
         }),
 
@@ -126,18 +167,40 @@ export async function POST(req: NextRequest) {
                 userId: session.userId,
                 workspaceId,
                 type: 'ENTITLEMENT_GRANTED',
-                title: '✅ Domain đã xác minh thành công!',
-                body: `${normalizedDomain} đã được xác minh. CRM sẽ được triển khai trong ít phút.`,
+                title: '✅ Domain xác minh + CRM đang triển khai!',
+                body: `${normalizedDomain} đã xác minh. CRM đang được tự động triển khai — thường mất 5-15 phút.`,
                 referenceType: 'DNS_VERIFICATION',
                 referenceId: verification.id,
             },
         }),
     ]);
 
+    // ── Fire-and-forget: trigger deployer on VPS ──
+    const deployerUrl = process.env.DEPLOYER_URL || 'http://127.0.0.1:9876/deploy';
+    const deploySecret = process.env.DEPLOY_CALLBACK_SECRET || 'deploy-secret-key';
+    fetch(deployerUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${deploySecret}`,
+        },
+        body: JSON.stringify({
+            domain: normalizedDomain,
+            instanceId: instance.id,
+            dbName: instance.dbName || dbName,
+            workspaceId,
+            adminEmail: session.email || `admin@${normalizedDomain}`,
+        }),
+    }).catch((err: Error) => {
+        console.error('[AUTO-DEPLOY] Failed to trigger deployer:', err.message);
+    });
+
     return NextResponse.json({
         ok: true,
         status: 'VERIFIED',
+        deploying: true,
         domain: normalizedDomain,
-        message: 'Domain đã xác minh thành công! CRM đang được triển khai.',
+        instanceId: instance.id,
+        message: 'Domain xác minh thành công! CRM đang được tự động triển khai.',
     });
 }
