@@ -289,6 +289,21 @@ export async function POST(req: NextRequest) {
             });
         }
 
+        // APP: send launch link notification (no domain/deploy needed)
+        const isApp = product.type === 'APP';
+        if (isApp && workspace) {
+            const appUrl = `https://${product.key.toLowerCase()}.emarketervietnam.vn`;
+            await tx.notificationQueue.create({
+                data: {
+                    userId, workspaceId: workspace.id,
+                    type: 'ENTITLEMENT_GRANTED',
+                    title: `🚀 ${product.name} — Sẵn sàng sử dụng!`,
+                    body: `Truy cập ngay tại: ${appUrl}. Nhấn "Mở App" từ Marketplace để đăng nhập tự động.`,
+                    referenceType: 'ORDER', referenceId: order.id,
+                },
+            });
+        }
+
         // Subscription with trial
         if (product.billingModel === 'SUBSCRIPTION' && workspace) {
             const plan = planId ? await tx.plan.findUnique({ where: { id: planId } }) : null;
@@ -358,11 +373,16 @@ export async function POST(req: NextRequest) {
     });
 
 
+    const isApp = product.type === 'APP';
+    const appUrl = isApp ? `https://${product.key.toLowerCase()}.emarketervietnam.vn` : undefined;
+
     return NextResponse.json({
         ok: true, order: result, message: `Mua "${product.name}" thành công!`,
         productType: product.type, deliveryMethod: product.deliveryMethod,
         charged: chargeAmount, discount: discountAmount,
         // CRM-specific: redirect to setup page
         ...(isCrm ? { setupUrl: `/hub/setup/${result.id}`, status: orderStatus } : {}),
+        // APP-specific: direct launch link
+        ...(isApp ? { appUrl, launchUrl: `/hub/marketplace` } : {}),
     }, { status: 201 });
 }
