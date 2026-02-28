@@ -41,6 +41,9 @@ export const FeatureKey = {
     AFFILIATES: 'AFFILIATES',
     KNOWLEDGE_BASE: 'KNOWLEDGE_BASE',
     FINANCE_ADMIN: 'FINANCE_ADMIN',
+
+    // App Modules (managed via CRM)
+    ESTUDIO_ADMIN: 'ESTUDIO_ADMIN',
 } as const;
 
 export type FeatureKeyType = typeof FeatureKey[keyof typeof FeatureKey];
@@ -83,6 +86,7 @@ export const FEATURE_TIER: Record<string, 'CORE' | 'ADD_ON' | 'ADMIN'> = {
     [FeatureKey.AFFILIATES]: 'ADD_ON',
     [FeatureKey.KNOWLEDGE_BASE]: 'ADD_ON',
     [FeatureKey.FINANCE_ADMIN]: 'ADMIN',
+    [FeatureKey.ESTUDIO_ADMIN]: 'ADD_ON',
 };
 
 // ─── Feature Dependencies ────────────────────────────────
@@ -123,4 +127,5 @@ export const FEATURE_LABELS: Record<string, string> = {
     [FeatureKey.AFFILIATES]: 'Hệ thống CTV',
     [FeatureKey.KNOWLEDGE_BASE]: 'Trung tâm kiến thức',
     [FeatureKey.FINANCE_ADMIN]: 'Tài chính & Đối soát',
+    [FeatureKey.ESTUDIO_ADMIN]: 'eStudio Manager',
 };

@@ -35,6 +35,7 @@ function CrmIcon({ name, size = 18, color = 'currentColor' }: { name: string; si
         case 'more': return <svg {...props}><circle cx="12" cy="12" r="1" fill={color} /><circle cx="19" cy="12" r="1" fill={color} /><circle cx="5" cy="12" r="1" fill={color} /></svg>;
         case 'shield': return <svg {...props}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>;
         case 'finance': return <svg {...props}><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>;
+        case 'estudio': return <svg {...props}><polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" /></svg>;
         default: return null;
     }
 }
@@ -57,6 +58,8 @@ const sidebarItems = [
     { href: '/emk-crm/audit-logs', icon: 'logs', label: 'Nhật ký Admin', exact: false, group: 'ops', featureKey: null },
     { href: '/emk-crm/reports', icon: 'reports', label: 'Báo cáo', exact: false, group: 'ops', featureKey: null },
     { href: '/emk-crm/logs', icon: 'logs', label: 'Nhật ký', exact: false, group: 'ops', featureKey: null },
+    // App Modules — mỗi app trên Hub là 1 module CRM
+    { href: '/emk-crm/estudio', icon: 'estudio', label: 'eStudio', exact: false, group: 'apps', featureKey: 'ESTUDIO_ADMIN' },
 ];
 
 const mobileNav = [
@@ -185,6 +188,32 @@ export default function EmkCrmLayout({ children }: { children: React.ReactNode }
                             ? <IfFeature key={item.href} feature={item.featureKey}>{navLink}</IfFeature>
                             : navLink;
                     })}
+
+                    {sidebarItems.some(i => i.group === 'apps') && (
+                        <>
+                            <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', padding: '16px 14px 4px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Apps</div>
+                            {sidebarItems.filter(i => i.group === 'apps').map(item => {
+                                const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
+                                const navLink = (
+                                    <Link key={item.href} href={item.href} className="crm-nav-item" style={{
+                                        display: 'flex', alignItems: 'center', gap: '10px',
+                                        padding: '10px 14px', borderRadius: '12px',
+                                        background: isActive ? 'rgba(99,102,241,0.1)' : 'transparent',
+                                        color: isActive ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                                        fontWeight: isActive ? 700 : 500, fontSize: '14px',
+                                        textDecoration: 'none',
+                                        borderLeft: isActive ? '3px solid var(--accent-primary)' : '3px solid transparent',
+                                    }}>
+                                        <CrmIcon name={item.icon} size={16} color={isActive ? 'var(--accent-primary)' : 'var(--text-muted)'} />
+                                        {item.label}
+                                    </Link>
+                                );
+                                return item.featureKey
+                                    ? <IfFeature key={item.href} feature={item.featureKey}>{navLink}</IfFeature>
+                                    : navLink;
+                            })}
+                        </>
+                    )}
 
                     <div style={{ marginTop: 'auto', paddingTop: '12px', borderTop: '1px solid var(--border)' }}>
                         {/* User profile */}
@@ -355,6 +384,41 @@ export default function EmkCrmLayout({ children }: { children: React.ReactNode }
                                         </Link>
                                     );
                                 })}
+
+                                {sidebarItems.some(i => i.group === 'apps') && (
+                                    <>
+                                        <div style={{ height: '1px', background: 'var(--border)', margin: '8px 12px' }} />
+                                        <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', padding: '8px 12px 4px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Apps</div>
+                                        {sidebarItems.filter(i => i.group === 'apps').map((item, idx) => {
+                                            const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
+                                            return (
+                                                <Link key={item.href} href={item.href} onClick={closeMenu}
+                                                    className="crm-menu-item"
+                                                    style={{
+                                                        display: 'flex', alignItems: 'center', gap: '12px',
+                                                        padding: '12px 14px', borderRadius: '12px',
+                                                        background: isActive ? 'rgba(99,102,241,0.08)' : 'transparent',
+                                                        color: isActive ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                                                        fontWeight: isActive ? 700 : 500, fontSize: '15px',
+                                                        textDecoration: 'none',
+                                                        transform: menuOpen ? 'translateX(0)' : 'translateX(-12px)',
+                                                        opacity: menuOpen ? 1 : 0,
+                                                        transition: `all 300ms cubic-bezier(.4,0,.2,1) ${(idx + 12) * 30}ms`,
+                                                    }}>
+                                                    <span style={{
+                                                        width: '34px', height: '34px', borderRadius: '10px',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                        background: isActive ? 'rgba(99,102,241,0.12)' : 'var(--bg-primary)',
+                                                        flexShrink: 0, transition: 'all 200ms ease',
+                                                    }}>
+                                                        <CrmIcon name={item.icon} size={16} color={isActive ? 'var(--accent-primary)' : 'var(--text-muted)'} />
+                                                    </span>
+                                                    {item.label}
+                                                </Link>
+                                            );
+                                        })}
+                                    </>
+                                )}
 
                                 <div style={{ height: '1px', background: 'var(--border)', margin: '8px 12px' }} />
 

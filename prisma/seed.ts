@@ -84,6 +84,55 @@ async function seed() {
                 { q: 'AI viết bằng tiếng Việt?', a: 'Có, AI được huấn luyện chuyên biệt cho tiếng Việt.' },
             ],
         },
+        // ═══════ eStudio — AI Content Studio ═══════
+        {
+            key: 'estudio', slug: 'estudio', name: 'eStudio — AI Content Studio',
+            type: 'APP',
+            billingModel: 'SUBSCRIPTION',
+            deliveryMethod: 'PROVISION_TENANT',
+            tagline: 'Viết kịch bản video, tạo ảnh & video bằng AI cho TikTok, Shorts, YouTube',
+            outcomeText: 'Tiết kiệm 20+ giờ/tuần tạo nội dung video với AI',
+            industry: ['CONTENT', 'MARKETING', 'PERSONAL'], icon: '🎬',
+            priceMonthly: 399000, priceYearly: 3990000,
+            status: 'PUBLISHED',
+            imageRef: 'registry.emk.vn/estudio:latest',
+            demoUrl: 'https://estudio-demo.emarketervietnam.vn',
+            features: [
+                { text: 'Viết kịch bản video AI (TikTok/Shorts)', included: true },
+                { text: 'Nhân hoá đồ vật — tạo nhân vật AI', included: true },
+                { text: 'Multi-scene script với visual prompt', included: true },
+                { text: 'Mẫu kịch bản theo ngành', included: true },
+                { text: 'Lịch sử kịch bản', included: true },
+                { text: 'YouTube Creator mode', included: false },
+                { text: 'Fashion AI — thiết kế thời trang', included: false },
+                { text: 'Tạo ảnh AI (Gemini Imagen)', included: false },
+                { text: 'Tạo video AI (Veo)', included: false },
+            ],
+            faq: [
+                { q: 'eStudio dùng AI gì?', a: 'Google Gemini cho kịch bản, Imagen cho ảnh, Veo cho video.' },
+                { q: 'Có giới hạn số kịch bản?', a: 'Gói Starter: 100 kịch bản/tháng. Gói Pro: không giới hạn.' },
+                { q: 'Mua thêm tính năng có được không?', a: 'Có, bạn mua add-on YouTube, Fashion, Image Gen, Video Gen riêng.' },
+            ],
+            planOptions: [
+                {
+                    key: 'ESTUDIO_STARTER', name: 'Starter', price: 399000, cycle: 'monthly',
+                    features: ['ESTUDIO_CORE', 'ESTUDIO_TEMPLATES', 'ESTUDIO_HISTORY', 'ESTUDIO_EXPORT'],
+                },
+                {
+                    key: 'ESTUDIO_PRO', name: 'Pro', price: 899000, cycle: 'monthly',
+                    features: ['ESTUDIO_CORE', 'ESTUDIO_TEMPLATES', 'ESTUDIO_HISTORY', 'ESTUDIO_EXPORT', 'ESTUDIO_BATCH', 'ESTUDIO_CLONE', 'ESTUDIO_YOUTUBE', 'ESTUDIO_FASHION'],
+                },
+            ],
+            addons: [
+                { featureKey: 'ESTUDIO_YOUTUBE', name: 'YouTube Creator', price: 149000, billing: 'monthly' },
+                { featureKey: 'ESTUDIO_FASHION', name: 'Fashion AI', price: 149000, billing: 'monthly' },
+                { featureKey: 'ESTUDIO_IMAGE_GEN', name: 'Tạo ảnh AI', price: 199000, billing: 'monthly' },
+                { featureKey: 'ESTUDIO_VIDEO_GEN', name: 'Tạo video AI', price: 299000, billing: 'monthly' },
+                { featureKey: 'ESTUDIO_BATCH', name: 'Batch Mode', price: 99000, billing: 'monthly' },
+                { featureKey: 'ESTUDIO_CLONE', name: 'Nhân bản kịch bản', price: 49000, billing: 'monthly' },
+            ],
+            sortOrder: 6,
+        },
     ];
 
     for (const p of products) {

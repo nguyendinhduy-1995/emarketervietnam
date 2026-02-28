@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  hubUserId   String   @unique  // from Hub launch token
+  email       String   @unique
+  name        String
+  role        String   @default("USER") // USER | ADMIN
+  avatar      String?
+  lastLoginAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  scripts     Script[]
+  generations Generation[]
+  sessions    Session[]
+
+  @@index([hubUserId])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([token])
+}
+
+model Script {
+  id         String   @id @default(cuid())
+  userId     String
+  title      String
+  mode       String   // character | story | youtube | batch
+  scenesJson Json     // full script data
+  metadata   Json?    // category, mood, artStyle, etc.
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Generation {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // script | image | video | fashion
+  prompt    String?
+  resultUrl String?
+  cost      Int      @default(0) // credit cost
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([type])
+}
+
+model EntitlementCache {
+  id          String   @id @default("singleton")
+  snapshot    Json     // cached entitlement snapshot from Hub
+  signature   String
+  receivedAt  DateTime @default(now())
+  expiresAt   DateTime
+
+  @@index([expiresAt])
+}
