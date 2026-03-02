@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
 import { requireEmkRole } from '@/lib/auth/emk-guard';
 import { platformDb } from '@/lib/db/platform';
-
-const _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // POST – Chấm điểm tài khoản bằng AI (Rule-based + GPT)
 export async function POST(req: NextRequest) {

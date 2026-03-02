@@ -82,7 +82,7 @@ export default function CrmSetupPage() {
                 }),
             });
             const d = await r.json();
-            if (d.ok && d.status === 'VERIFIED' || d.status === 'ALREADY_VERIFIED') {
+            if (d.ok && (d.status === 'VERIFIED' || d.status === 'ALREADY_VERIFIED')) {
                 loadData();
             } else {
                 const issues = d.issues?.join('; ') || d.error || d.message;
@@ -145,7 +145,8 @@ export default function CrmSetupPage() {
 
     const dns = data.dnsVerification;
     const instance = data.crmInstance;
-    const orderMeta = data.order.note ? JSON.parse(data.order.note) : {};
+    let orderMeta: Record<string, string> = {};
+    try { if (data.order.note) orderMeta = JSON.parse(data.order.note); } catch { /* invalid JSON in note */ }
 
     return (
         <div style={{ maxWidth: '720px', margin: '0 auto', padding: '24px 16px' }}>

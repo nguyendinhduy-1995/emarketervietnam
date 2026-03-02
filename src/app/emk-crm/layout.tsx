@@ -36,30 +36,55 @@ function CrmIcon({ name, size = 18, color = 'currentColor' }: { name: string; si
         case 'shield': return <svg {...props}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>;
         case 'finance': return <svg {...props}><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>;
         case 'estudio': return <svg {...props}><polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" /></svg>;
+        case 'chevron-down': return <svg {...props}><polyline points="6 9 12 15 18 9" /></svg>;
+        case 'chevron-right': return <svg {...props}><polyline points="9 18 15 12 9 6" /></svg>;
+        case 'digital': return <svg {...props}><rect x="2" y="3" width="20" height="14" rx="2" ry="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" /></svg>;
+        case 'app': return <svg {...props}><rect x="5" y="2" width="14" height="20" rx="2" ry="2" /><line x1="12" y1="18" x2="12" y2="18" /></svg>;
         default: return null;
     }
 }
 
+// ── Sidebar groups & labels ──
+const SIDEBAR_GROUPS = [
+    { key: 'workspace', label: 'Bàn làm việc' },
+    { key: 'manage', label: 'Quản lý' },
+    { key: 'ops', label: 'Vận hành' },
+    { key: 'reports', label: 'Báo cáo' },
+    { key: 'products', label: 'Sản phẩm' },
+];
+
 const sidebarItems = [
-    { href: '/emk-crm', icon: 'overview', label: 'Tổng quan', exact: true, group: 'manage', featureKey: null },
-    { href: '/emk-crm/dashboard', icon: 'dashboard', label: 'Bảng điều khiển', exact: false, group: 'manage', featureKey: null },
-    { href: '/emk-crm/saas-dashboard', icon: 'analytics', label: 'SaaS Metrics', exact: false, group: 'manage', featureKey: null },
+    // ── Bàn làm việc ──
+    { href: '/emk-crm', icon: 'overview', label: 'Tổng quan', exact: true, group: 'workspace', featureKey: null },
+    { href: '/emk-crm/dashboard', icon: 'dashboard', label: 'Bảng điều khiển', exact: false, group: 'workspace', featureKey: null },
+    { href: '/emk-crm/tasks', icon: 'tasks', label: 'Công việc', exact: false, group: 'workspace', featureKey: null },
+
+    // ── Quản lý ──
     { href: '/emk-crm/accounts', icon: 'accounts', label: 'Tài khoản Hub', exact: false, group: 'manage', featureKey: null },
-    { href: '/emk-crm/topups', icon: 'topups', label: 'Nạp tiền', exact: false, group: 'manage', featureKey: null },
-    { href: '/emk-crm/products', icon: 'products', label: 'Sản phẩm', exact: false, group: 'manage', featureKey: null },
-    { href: '/emk-crm/finance', icon: 'finance', label: 'Tài chính', exact: false, group: 'manage', featureKey: 'FINANCE_ADMIN' },
-    { href: '/emk-crm/tasks', icon: 'tasks', label: 'Công việc', exact: false, group: 'ops', featureKey: null },
-    { href: '/emk-crm/users', icon: 'shield', label: 'Nhân sự CRM', exact: false, group: 'ops', featureKey: null },
-    { href: '/emk-crm/tenants', icon: 'accounts', label: 'Quản lý Tenant', exact: false, group: 'ops', featureKey: null },
-    { href: '/emk-crm/affiliates', icon: 'affiliates', label: 'Đại lý & Hoa hồng', exact: false, group: 'ops', featureKey: 'AFFILIATES' },
+    { href: '/emk-crm/users', icon: 'shield', label: 'Nhân sự CRM', exact: false, group: 'manage', featureKey: null },
+    { href: '/emk-crm/tenants', icon: 'accounts', label: 'Quản lý đơn vị', exact: false, group: 'manage', featureKey: null },
+    { href: '/emk-crm/affiliates', icon: 'affiliates', label: 'Đại lý & Hoa hồng', exact: false, group: 'manage', featureKey: 'AFFILIATES' },
+
+    // ── Vận hành ──
+    { href: '/emk-crm/topups', icon: 'topups', label: 'Nạp tiền', exact: false, group: 'ops', featureKey: null },
+    { href: '/emk-crm/finance', icon: 'finance', label: 'Tài chính', exact: false, group: 'ops', featureKey: 'FINANCE_ADMIN' },
     { href: '/emk-crm/ai', icon: 'ai', label: 'Trung tâm AI', exact: false, group: 'ops', featureKey: 'AI_SETTINGS' },
-    { href: '/emk-crm/analytics', icon: 'analytics', label: 'Phân tích', exact: false, group: 'ops', featureKey: null },
     { href: '/emk-crm/cms', icon: 'cms', label: 'Nội dung (CMS)', exact: false, group: 'ops', featureKey: 'CMS' },
-    { href: '/emk-crm/audit-logs', icon: 'logs', label: 'Nhật ký Admin', exact: false, group: 'ops', featureKey: null },
-    { href: '/emk-crm/reports', icon: 'reports', label: 'Báo cáo', exact: false, group: 'ops', featureKey: null },
-    { href: '/emk-crm/logs', icon: 'logs', label: 'Nhật ký', exact: false, group: 'ops', featureKey: null },
-    // App Modules — mỗi app trên Hub là 1 module CRM
-    { href: '/emk-crm/estudio', icon: 'estudio', label: 'eStudio', exact: false, group: 'apps', featureKey: 'ESTUDIO_ADMIN' },
+
+    // ── Báo cáo ──
+    { href: '/emk-crm/saas-dashboard', icon: 'analytics', label: 'Chỉ số SaaS', exact: false, group: 'reports', featureKey: null },
+    { href: '/emk-crm/analytics', icon: 'analytics', label: 'Phân tích', exact: false, group: 'reports', featureKey: null },
+    { href: '/emk-crm/reports', icon: 'reports', label: 'Báo cáo', exact: false, group: 'reports', featureKey: null },
+    { href: '/emk-crm/audit-logs', icon: 'logs', label: 'Nhật ký Admin', exact: false, group: 'reports', featureKey: null },
+    { href: '/emk-crm/logs', icon: 'logs', label: 'Nhật ký hệ thống', exact: false, group: 'reports', featureKey: null },
+
+    // ── Sản phẩm ──
+    // CRM sub-group
+    { href: '/emk-crm/products', icon: 'products', label: 'CRM đã kích hoạt', exact: true, group: 'products', subGroup: 'crm', featureKey: null },
+    // APP sub-group
+    { href: '/emk-crm/estudio', icon: 'estudio', label: 'eStudio', exact: false, group: 'products', subGroup: 'app', featureKey: null },
+    // Digital sub-group
+    { href: '/emk-crm/products/digital', icon: 'digital', label: 'Quản lý SP số', exact: false, group: 'products', subGroup: 'digital', featureKey: null },
 ];
 
 const mobileNav = [
@@ -78,6 +103,8 @@ export default function EmkCrmLayout({ children }: { children: React.ReactNode }
     const [menuVisible, setMenuVisible] = useState(false); // for animation
     const [user, setUser] = useState<AuthUser | null>(null);
     const [authChecked, setAuthChecked] = useState(false);
+    // Product sub-sections expand state
+    const [expandedProductSubs, setExpandedProductSubs] = useState<Record<string, boolean>>({});
 
     // Check CRM auth state — redirect to login if not authenticated
     useEffect(() => {
@@ -145,75 +172,104 @@ export default function EmkCrmLayout({ children }: { children: React.ReactNode }
                         <CrmIcon name="ai" size={20} color="var(--accent-primary)" /> eMk-CRM
                     </Link>
 
-                    <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', padding: '8px 14px 4px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Quản lý</div>
-                    {sidebarItems.filter(i => i.group === 'manage').map(item => {
-                        const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
-                        const navLink = (
-                            <Link key={item.href} href={item.href} className="crm-nav-item" style={{
-                                display: 'flex', alignItems: 'center', gap: '10px',
-                                padding: '10px 14px', borderRadius: '12px',
-                                background: isActive ? 'rgba(99,102,241,0.1)' : 'transparent',
-                                color: isActive ? 'var(--accent-primary)' : 'var(--text-secondary)',
-                                fontWeight: isActive ? 700 : 500, fontSize: '14px',
-                                textDecoration: 'none',
-                                borderLeft: isActive ? '3px solid var(--accent-primary)' : '3px solid transparent',
-                            }}>
-                                <CrmIcon name={item.icon} size={16} color={isActive ? 'var(--accent-primary)' : 'var(--text-muted)'} />
-                                {item.label}
-                            </Link>
-                        );
-                        return item.featureKey
-                            ? <IfFeature key={item.href} feature={item.featureKey}>{navLink}</IfFeature>
-                            : navLink;
-                    })}
+                    {SIDEBAR_GROUPS.map(group => {
+                        const items = sidebarItems.filter(i => i.group === group.key);
+                        if (items.length === 0) return null;
 
-                    <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', padding: '16px 14px 4px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Vận hành</div>
-                    {sidebarItems.filter(i => i.group === 'ops').map(item => {
-                        const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
-                        const navLink = (
-                            <Link key={item.href} href={item.href} className="crm-nav-item" style={{
-                                display: 'flex', alignItems: 'center', gap: '10px',
-                                padding: '10px 14px', borderRadius: '12px',
-                                background: isActive ? 'rgba(99,102,241,0.1)' : 'transparent',
-                                color: isActive ? 'var(--accent-primary)' : 'var(--text-secondary)',
-                                fontWeight: isActive ? 700 : 500, fontSize: '14px',
-                                textDecoration: 'none',
-                                borderLeft: isActive ? '3px solid var(--accent-primary)' : '3px solid transparent',
-                            }}>
-                                <CrmIcon name={item.icon} size={16} color={isActive ? 'var(--accent-primary)' : 'var(--text-muted)'} />
-                                {item.label}
-                            </Link>
-                        );
-                        return item.featureKey
-                            ? <IfFeature key={item.href} feature={item.featureKey}>{navLink}</IfFeature>
-                            : navLink;
-                    })}
+                        // Special rendering for products group — collapsible sub-categories
+                        if (group.key === 'products') {
+                            const PRODUCT_SUBS = [
+                                { key: 'crm', label: 'CRM', icon: 'products' },
+                                { key: 'app', label: 'APP', icon: 'app' },
+                                { key: 'digital', label: 'Sản phẩm số', icon: 'digital' },
+                            ];
+                            // Auto-expand if current path is in a sub-group
+                            const activeSubGroup = items.find(i => i.exact ? pathname === i.href : pathname.startsWith(i.href))?.subGroup;
 
-                    {sidebarItems.some(i => i.group === 'apps') && (
-                        <>
-                            <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', padding: '16px 14px 4px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Apps</div>
-                            {sidebarItems.filter(i => i.group === 'apps').map(item => {
-                                const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
-                                const navLink = (
-                                    <Link key={item.href} href={item.href} className="crm-nav-item" style={{
-                                        display: 'flex', alignItems: 'center', gap: '10px',
-                                        padding: '10px 14px', borderRadius: '12px',
-                                        background: isActive ? 'rgba(99,102,241,0.1)' : 'transparent',
-                                        color: isActive ? 'var(--accent-primary)' : 'var(--text-secondary)',
-                                        fontWeight: isActive ? 700 : 500, fontSize: '14px',
-                                        textDecoration: 'none',
-                                        borderLeft: isActive ? '3px solid var(--accent-primary)' : '3px solid transparent',
-                                    }}>
-                                        <CrmIcon name={item.icon} size={16} color={isActive ? 'var(--accent-primary)' : 'var(--text-muted)'} />
-                                        {item.label}
-                                    </Link>
-                                );
-                                return item.featureKey
-                                    ? <IfFeature key={item.href} feature={item.featureKey}>{navLink}</IfFeature>
-                                    : navLink;
-                            })}
-                        </>
-                    )}
+                            return (
+                                <div key={group.key}>
+                                    <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', padding: '16px 14px 4px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{group.label}</div>
+                                    {PRODUCT_SUBS.map(sub => {
+                                        const subItems = items.filter(i => (i as any).subGroup === sub.key);
+                                        if (subItems.length === 0) return null;
+                                        const isExpanded = expandedProductSubs[sub.key] || activeSubGroup === sub.key;
+                                        const hasActiveChild = subItems.some(i => i.exact ? pathname === i.href : pathname.startsWith(i.href));
+
+                                        return (
+                                            <div key={sub.key}>
+                                                {/* Sub-category header */}
+                                                <button
+                                                    onClick={() => setExpandedProductSubs(prev => ({ ...prev, [sub.key]: !prev[sub.key] }))}
+                                                    className="crm-nav-item"
+                                                    style={{
+                                                        display: 'flex', alignItems: 'center', gap: '10px', width: '100%',
+                                                        padding: '9px 14px', borderRadius: '12px',
+                                                        background: hasActiveChild ? 'rgba(99,102,241,0.06)' : 'transparent',
+                                                        color: hasActiveChild ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                                                        fontWeight: 600, fontSize: '13px',
+                                                        border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
+                                                        borderLeft: '3px solid transparent',
+                                                    }}
+                                                >
+                                                    <CrmIcon name={sub.icon} size={15} color={hasActiveChild ? 'var(--accent-primary)' : 'var(--text-muted)'} />
+                                                    <span style={{ flex: 1 }}>{sub.label}</span>
+                                                    <CrmIcon name={isExpanded ? 'chevron-down' : 'chevron-right'} size={12} color="var(--text-muted)" />
+                                                </button>
+                                                {/* Sub-items */}
+                                                {isExpanded && subItems.map(item => {
+                                                    const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
+                                                    const navLink = (
+                                                        <Link key={item.href} href={item.href} className="crm-nav-item" style={{
+                                                            display: 'flex', alignItems: 'center', gap: '8px',
+                                                            padding: '8px 14px 8px 38px', borderRadius: '10px',
+                                                            background: isActive ? 'rgba(99,102,241,0.1)' : 'transparent',
+                                                            color: isActive ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                                                            fontWeight: isActive ? 700 : 500, fontSize: '13px',
+                                                            textDecoration: 'none',
+                                                            borderLeft: isActive ? '3px solid var(--accent-primary)' : '3px solid transparent',
+                                                        }}>
+                                                            <CrmIcon name={item.icon} size={14} color={isActive ? 'var(--accent-primary)' : 'var(--text-muted)'} />
+                                                            {item.label}
+                                                        </Link>
+                                                    );
+                                                    return item.featureKey
+                                                        ? <IfFeature key={item.href} feature={item.featureKey}>{navLink}</IfFeature>
+                                                        : navLink;
+                                                })}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            );
+                        }
+
+                        // Standard group rendering
+                        return (
+                            <div key={group.key}>
+                                <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', padding: group.key === 'workspace' ? '8px 14px 4px' : '16px 14px 4px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{group.label}</div>
+                                {items.map(item => {
+                                    const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
+                                    const navLink = (
+                                        <Link key={item.href} href={item.href} className="crm-nav-item" style={{
+                                            display: 'flex', alignItems: 'center', gap: '10px',
+                                            padding: '10px 14px', borderRadius: '12px',
+                                            background: isActive ? 'rgba(99,102,241,0.1)' : 'transparent',
+                                            color: isActive ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                                            fontWeight: isActive ? 700 : 500, fontSize: '14px',
+                                            textDecoration: 'none',
+                                            borderLeft: isActive ? '3px solid var(--accent-primary)' : '3px solid transparent',
+                                        }}>
+                                            <CrmIcon name={item.icon} size={16} color={isActive ? 'var(--accent-primary)' : 'var(--text-muted)'} />
+                                            {item.label}
+                                        </Link>
+                                    );
+                                    return item.featureKey
+                                        ? <IfFeature key={item.href} feature={item.featureKey}>{navLink}</IfFeature>
+                                        : navLink;
+                                })}
+                            </div>
+                        );
+                    })}
 
                     <div style={{ marginTop: 'auto', paddingTop: '12px', borderTop: '1px solid var(--border)' }}>
                         {/* User profile */}

@@ -22,7 +22,7 @@ export default function EstudioAdminPage() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Fetch eStudio instances from Hub
+        // Lấy danh sách phiên bản eStudio từ Hub
         fetch('/api/emk-crm/estudio/instances')
             .then(r => r.ok ? r.json() : { instances: [] })
             .then(d => setInstances(d.instances || []))
@@ -31,9 +31,9 @@ export default function EstudioAdminPage() {
     }, []);
 
     const stats: UsageStat[] = [
-        { label: 'Instances', value: String(instances.length), icon: '🎬', change: 'Active' },
-        { label: 'Total Users', value: '—', icon: '👥', change: 'All instances' },
-        { label: 'Scripts/Tháng', value: '—', icon: '📝', change: 'Tổng' },
+        { label: 'Phiên bản', value: String(instances.length), icon: '🎬', change: 'Đang hoạt động' },
+        { label: 'Tổng người dùng', value: '—', icon: '👥', change: 'Tất cả' },
+        { label: 'Kịch bản/Tháng', value: '—', icon: '📝', change: 'Tổng' },
         { label: 'Doanh thu', value: '—', icon: '💰', change: 'Tháng này' },
     ];
 
@@ -41,14 +41,14 @@ export default function EstudioAdminPage() {
         <div>
             <div style={{ marginBottom: '24px' }}>
                 <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    🎬 eStudio Manager
+                    🎬 Quản lý eStudio
                 </h1>
                 <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                    Quản lý instances eStudio đang hoạt động trên hệ thống
+                    Quản lý các phiên bản eStudio đang hoạt động trên hệ thống
                 </p>
             </div>
 
-            {/* Stats */}
+            {/* Thống kê */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '24px' }}>
                 {stats.map(s => (
                     <div key={s.label} style={{
@@ -65,7 +65,7 @@ export default function EstudioAdminPage() {
                 ))}
             </div>
 
-            {/* Instances Table */}
+            {/* Bảng phiên bản */}
             <div style={{
                 background: 'var(--bg-card)', border: '1px solid var(--border)',
                 borderRadius: '14px', overflow: 'hidden',
@@ -75,8 +75,8 @@ export default function EstudioAdminPage() {
                     borderBottom: '1px solid var(--border)',
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 }}>
-                    <h2 style={{ fontSize: '15px', fontWeight: 700 }}>Instances</h2>
-                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{instances.length} total</span>
+                    <h2 style={{ fontSize: '15px', fontWeight: 700 }}>Danh sách phiên bản</h2>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{instances.length} tổng</span>
                 </div>
 
                 {loading ? (
@@ -87,17 +87,17 @@ export default function EstudioAdminPage() {
                     <div style={{ padding: '40px', textAlign: 'center' }}>
                         <div style={{ fontSize: '40px', marginBottom: '8px' }}>📭</div>
                         <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                            Chưa có instance nào. Khi khách hàng mua eStudio qua Hub, instances sẽ hiển thị tại đây.
+                            Chưa có phiên bản nào. Khi khách hàng mua eStudio qua Hub, phiên bản sẽ hiển thị tại đây.
                         </p>
                     </div>
                 ) : (
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                         <thead>
                             <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-primary)' }}>
-                                <th style={{ padding: '10px 20px', textAlign: 'left', fontWeight: 600, color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase' }}>Domain</th>
-                                <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 600, color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase' }}>Status</th>
+                                <th style={{ padding: '10px 20px', textAlign: 'left', fontWeight: 600, color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase' }}>Tên miền</th>
+                                <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 600, color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase' }}>Trạng thái</th>
                                 <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 600, color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase' }}>Ngày tạo</th>
-                                <th style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase' }}>Actions</th>
+                                <th style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase' }}>Hành động</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -112,7 +112,7 @@ export default function EstudioAdminPage() {
                                             padding: '3px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: 600,
                                             background: inst.status === 'ACTIVE' ? '#10b98115' : inst.status === 'DEPLOYING' ? '#f59e0b15' : '#ef444415',
                                             color: inst.status === 'ACTIVE' ? '#10b981' : inst.status === 'DEPLOYING' ? '#f59e0b' : '#ef4444',
-                                        }}>{inst.status}</span>
+                                        }}>{inst.status === 'ACTIVE' ? 'Hoạt động' : inst.status === 'DEPLOYING' ? 'Đang triển khai' : inst.status}</span>
                                     </td>
                                     <td style={{ padding: '12px 16px', color: 'var(--text-muted)' }}>
                                         {new Date(inst.createdAt).toLocaleDateString('vi-VN')}

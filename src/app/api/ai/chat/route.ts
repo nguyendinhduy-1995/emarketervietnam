@@ -176,7 +176,8 @@ async function getRevenueData() {
 
 // Execute function call
 async function executeFunction(name: string, args: string): Promise<string> {
-    const params = JSON.parse(args || '{}');
+    let params: Record<string, unknown> = {};
+    try { params = JSON.parse(args || '{}'); } catch { /* malformed args from LLM */ }
     let result: unknown;
 
     switch (name) {
