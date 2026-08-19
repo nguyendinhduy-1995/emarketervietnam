@@ -1,10 +1,9 @@
 export type AIDepartment =
   | "executive"
-  | "deal"
   | "product"
   | "brand"
   | "growth"
-  | "sales"
+  | "channels"
   | "crm"
   | "operations"
   | "finance"
@@ -48,6 +47,7 @@ export interface AICompanyAgent {
 }
 
 export type CommercialDecision = "TEST" | "HOLD" | "SCALE" | "KILL" | "REVIEW";
+export type HealthStatus = "HEALTHY" | "WATCH" | "WARNING" | "CRITICAL";
 
 export interface CommercialSnapshot {
   revenue: number;
